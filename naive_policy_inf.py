@@ -38,7 +38,7 @@ def run():
       ball = state['ball']
       hole = state['hole']
       hit_direction = hole.pos - ball.pos
-      hit_direction.set_magnitude(hit_direction.magnitude() * 2)
+      hit_direction.set_magnitude(hit_direction.magnitude() / 200)
 
       act(state, hit_direction)
 

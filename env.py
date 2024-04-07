@@ -112,5 +112,5 @@ def run(state, dt):
 def act(state, hit_direction):
   """Apply the hit direction to the ball."""
   ball = state["ball"]
-  ball.vel = hit_direction
+  ball.vel = hit_direction * 400
   state["strokes"] += 1
