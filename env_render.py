@@ -1,7 +1,8 @@
 import pygame
+from env import make_state
 
 
-def render_state(state):
+def render_state(state, surface=None):
   pygame.init()
 
   ball = state['ball']
@@ -9,11 +10,12 @@ def render_state(state):
   walls = state['walls']
   size = state['size']
 
-  # make render target
-  surface = pygame.Surface((size, size))
+  # make render target if not provided
+  if surface is None:
+    surface = pygame.Surface((size, size))
 
   # clear surface with white
-  surface.fill((255, 255, 255))
+  surface.fill((64, 230, 12))
 
   # render game state
   hole.render(surface)
@@ -22,3 +24,30 @@ def render_state(state):
   ball.render(surface)
 
   return surface
+
+
+if __name__ == '__main__':
+  print('Testing state rendering...')
+
+  state = make_state()
+  screen = pygame.display.set_mode(
+      (state['size'], state['size']), pygame.SCALED | pygame.RESIZABLE)
+
+  clock = pygame.time.Clock()
+
+  running = True
+  while running:
+    for event in pygame.event.get():
+      if event.type == pygame.QUIT:
+        running = False
+      elif event.type == pygame.KEYDOWN:
+        if event.key == pygame.K_ESCAPE:
+          running = False
+        elif event.key == pygame.K_SPACE:
+          state = make_state()
+
+    surface = render_state(state, screen)
+    pygame.display.flip()
+    clock.tick(60)
+
+  pygame.quit()

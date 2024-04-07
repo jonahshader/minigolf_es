@@ -1,19 +1,19 @@
 from math import sqrt
-from utils import Vec2, Line, Rect, Wall, Ball, Circle
+from utils import Vec2, Line, Rect, Wall, Ball, Hole
 import random
 
 
-def make_walls(ball_start, hole_start, size=128, wall_subsections=5, wall_chance=0.75, wall_overlap=0.5):
+def make_walls(ball_start, hole_start, size, wall_subsections, wall_chance, wall_overlap):
   ball_start = ball_start / size
   hole_start = hole_start / size
   walls = []
   for y in range(wall_subsections):
     for x in range(wall_subsections):
       # create a region for this wall
-      region_x_start = x / (wall_subsections + 1)
-      region_y_start = y / (wall_subsections + 1)
-      region_x_end = (x + 1) / (wall_subsections + 1)
-      region_y_end = (y + 1) / (wall_subsections + 1)
+      region_x_start = x / wall_subsections
+      region_y_start = y / wall_subsections
+      region_x_end = (x + 1) / wall_subsections
+      region_y_end = (y + 1) / wall_subsections
       region = Rect(Vec2(region_x_start, region_y_start), Vec2(
           region_x_end - region_x_start, region_y_end - region_y_start))
       if region.contains(ball_start) or region.contains(hole_start):
@@ -33,14 +33,22 @@ def make_walls(ball_start, hole_start, size=128, wall_subsections=5, wall_chance
   return walls
 
 
-def make_state(size=128, max_strokes=4, wall_subsections=5, wall_chance=0.75, wall_overlap=0.5):
-  ball_start = Vec2(random.random(), random.random()) * size
-  hole_start = Vec2(random.random(), random.random()) * size
+def make_state(size=256, max_strokes=4, wall_subsections=5, wall_chance=0.5, wall_overlap=0.5):
+  ball_start = Vec2(random.random() * 0.125 + 0.125, random.random() * 0.125 + 0.125) * size
+  hole_start = Vec2(size, size) - ball_start
   walls = make_walls(ball_start, hole_start, size,
                      wall_subsections, wall_chance, wall_overlap)
+  
+  # add walls around the edge, inset
+  inset = 3
+  walls.append(Wall(Line(Vec2(inset, inset), Vec2(size-inset, inset))))
+  walls.append(Wall(Line(Vec2(size-inset, inset), Vec2(size-inset, size-inset))))
+  walls.append(Wall(Line(Vec2(size-inset, size-inset), Vec2(inset, size-inset))))
+  walls.append(Wall(Line(Vec2(inset, size-inset), Vec2(inset, inset))))
+
   return {
       "ball": Ball(ball_start),
-      "hole": Circle(hole_start, 5),
+      "hole": Hole(hole_start),
       "walls": walls,
       "strokes": 0,
       "size": size,

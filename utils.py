@@ -14,8 +14,10 @@ class Vec2:
   def __sub__(self, other):
     return Vec2(self.x - other.x, self.y - other.y)
 
-  def __mul__(self, scalar):
-    return Vec2(self.x * scalar, self.y * scalar)
+  def __mul__(self, other):
+    if type(other) == Vec2:
+      return Vec2(self.x * other.x, self.y * other.y)
+    return Vec2(self.x * other, self.y * other)
 
   def dot(self, other):
     return self.x * other.x + self.y * other.y
@@ -30,6 +32,8 @@ class Vec2:
     return self.dot(self) ** 0.5
 
   def set_magnitude(self, magnitude):
+    if magnitude == 0:
+      return Vec2(0, 0)
     return self * (magnitude / self.magnitude())
 
   def __truediv__(self, scalar):
@@ -39,17 +43,17 @@ class Vec2:
     return f"({self.x}, {self.y})"
 
 
-class Circle:
-  def __init__(self, center, radius):
-    self.center = center
+class Hole:
+  def __init__(self, pos, radius=4):
+    self.pos = pos
     self.radius = radius
 
   def contains(self, point):
-    return (point - self.center).dot(point - self.center) <= self.radius * self.radius
+    return (point - self.pos).dot(point - self.pos) <= self.radius * self.radius
 
-  def render(self, surface, color=(0, 255, 0)):
+  def render(self, surface, color=(0, 0, 0)):
     pygame.draw.circle(
-        surface, color, (self.center.x, self.center.y), self.radius)
+        surface, color, (self.pos.x, self.pos.y), self.radius)
 
 
 class Line:
@@ -89,7 +93,9 @@ class Wall:
     self.bounce_coeff = bounce_coeff
 
   def render(self, surface):
-    pygame.draw.line(surface, (0, 0, 0), (self.line.start.x, self.line.start.y),
+    pygame.draw.line(surface, (48, 172, 9), (self.line.start.x-1, self.line.start.y+1),
+                     (self.line.end.x-1, self.line.end.y+1), Wall.thickness)
+    pygame.draw.line(surface, (200, 170, 150), (self.line.start.x, self.line.start.y),
                      (self.line.end.x, self.line.end.y), Wall.thickness)
 
 
@@ -106,15 +112,19 @@ class Rect:
 
 
 class Ball:
-  friction = 3  # 1/s^2
-  radius = 3
+  friction = 12  # 1/s^2
+  radius = 4
 
   def __init__(self, pos):
     self.pos = pos
     self.vel = Vec2(0, 0)
 
   def render(self, surface):
-    pygame.draw.circle(surface, (0, 0, 0),
+    pygame.draw.circle(surface, (48, 172, 9),
+                       (self.pos.x-1, self.pos.y+1), Ball.radius)
+    pygame.draw.circle(surface, (32, 115, 6),
+                       (self.pos.x-1, self.pos.y+1), Ball.radius-1)
+    pygame.draw.circle(surface, (225, 255, 255),
                        (self.pos.x, self.pos.y), Ball.radius)
 
   def update(self, state, dt) -> bool:
@@ -132,15 +142,15 @@ class Ball:
     for wall in walls:
       intersection = wall.line.intersect(movement)
       if intersection is not None:
-        self.pos = intersection
+        self.pos = old_pos
         normal = (wall.line.end - wall.line.start).set_magnitude(1)
-        self.vel = self.vel - 2 * \
-            self.vel.dot(normal) * normal * wall.bounce_coeff
+        normal = Vec2(-normal.y, normal.x)
+        self.vel = self.vel - normal * wall.bounce_coeff * self.vel.dot(normal) * 2
 
     # check if the ball is in the hole
     if hole.contains(self.pos):
       self.vel = Vec2(0, 0)
-      self.pos = deepcopy(hole.center)
+      self.pos = deepcopy(hole.pos)
 
     # reduce velocity due to friction
     vel_mag = self.vel.magnitude()
