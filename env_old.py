@@ -3,6 +3,7 @@ import numpy as np
 
 display_width, display_height = 1024, 1024
 
+
 def initialize_pygame():
   pygame.init()
   internal_width, internal_height = 128, 128

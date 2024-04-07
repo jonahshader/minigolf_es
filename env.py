@@ -2,6 +2,7 @@ from math import sqrt
 from utils import Vec2, Line, Rect, Wall, Ball, Circle
 import random
 
+
 def make_walls(ball_start, hole_start, size=128, wall_subsections=5, wall_chance=0.75, wall_overlap=0.5):
   ball_start = ball_start / size
   hole_start = hole_start / size
@@ -13,7 +14,8 @@ def make_walls(ball_start, hole_start, size=128, wall_subsections=5, wall_chance
       region_y_start = y / (wall_subsections + 1)
       region_x_end = (x + 1) / (wall_subsections + 1)
       region_y_end = (y + 1) / (wall_subsections + 1)
-      region = Rect(Vec2(region_x_start, region_y_start), Vec2(region_x_end - region_x_start, region_y_end - region_y_start))
+      region = Rect(Vec2(region_x_start, region_y_start), Vec2(
+          region_x_end - region_x_start, region_y_end - region_y_start))
       if region.contains(ball_start) or region.contains(hole_start):
         continue
       if random.random() > wall_chance:
@@ -30,18 +32,21 @@ def make_walls(ball_start, hole_start, size=128, wall_subsections=5, wall_chance
       walls.append(Wall(Line(p1, p2)))
   return walls
 
+
 def make_state(size=128, max_strokes=4, wall_subsections=5, wall_chance=0.75, wall_overlap=0.5):
   ball_start = Vec2(random.random(), random.random()) * size
   hole_start = Vec2(random.random(), random.random()) * size
-  walls = make_walls(ball_start, hole_start, size, wall_subsections, wall_chance, wall_overlap)
+  walls = make_walls(ball_start, hole_start, size,
+                     wall_subsections, wall_chance, wall_overlap)
   return {
-    "ball": Ball(ball_start),
-    "hole": Circle(hole_start, 5),
-    "walls": walls,
-    "strokes": 0,
-    "size": size,
-    "max_strokes": max_strokes
+      "ball": Ball(ball_start),
+      "hole": Circle(hole_start, 5),
+      "walls": walls,
+      "strokes": 0,
+      "size": size,
+      "max_strokes": max_strokes
   }
+
 
 def state_loss(state):
   """Return the loss for the current state."""
@@ -63,8 +68,41 @@ def state_loss(state):
     stroke_loss = 0
 
   return stroke_loss + strokes
-  
-
-  
 
 
+def is_done(state):
+  """Return whether the episode is done."""
+  ball = state["ball"]
+  hole = state["hole"]
+  strokes = state["strokes"]
+  max_strokes = state["max_strokes"]
+
+  return hole.contains(ball.pos) or (ball.vel.magnitude() == 0 and strokes >= max_strokes)
+
+
+def step(state, dt) -> bool:
+  """Simulate the state for one step. Returns true if waiting for action.
+  We are waiting for action if the ball is stopped and we aren't done yet."""
+
+  ball = state["ball"]
+  hole = state["hole"]
+  strokes = state["strokes"]
+  max_strokes = state["max_strokes"]
+
+  # update ball
+  ball_stopped = ball.update(state, dt)
+
+  return ball_stopped and not hole.contains(ball.pos) and strokes < max_strokes
+
+
+def run(state, dt):
+  """Run the simulation until waiting for action."""
+  while not step(state, dt):
+    pass
+
+
+def act(state, hit_direction):
+  """Apply the hit direction to the ball."""
+  ball = state["ball"]
+  ball.vel = hit_direction
+  state["strokes"] += 1
