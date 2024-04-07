@@ -29,9 +29,7 @@ def policy(screen, model):
     output = model(screen_tensor)
     # output is a tensor of shape (1, 3)
     # we want to pull out the scalars as direction, magnitude
-    direction = output[0][0:2]
-    magnitude = torch.sigmoid(output[0][2])
-    hit_direction = (direction * magnitude).numpy().tolist()
+    hit_direction = output[0].numpy().tolist()
     return Vec2(*hit_direction)
 
 

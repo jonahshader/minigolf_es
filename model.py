@@ -24,4 +24,9 @@ class BasicCNN(nn.Module):
     x = F.gelu(self.fc1(x))
     x = F.gelu(self.fc2(x))
     x = self.fc3(x)
-    return x
+
+    # we have 3 outputs: x, y, and magnitude.
+    # group x y into a single vector, then multiply by sigmoid(magnitude).
+    direction = x[:, 0:2]
+    magnitude = torch.sigmoid(x[:, 2:3])
+    return direction * magnitude # (batch_size, 2)
