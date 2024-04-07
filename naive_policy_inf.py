@@ -44,7 +44,7 @@ def run():
 
     surface = render_state(state, screen)
     pygame.display.flip()
-    clock.tick(60)
+    clock.tick(165)
 
   pygame.quit()
 

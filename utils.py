@@ -46,14 +46,16 @@ class Vec2:
 class Hole:
   def __init__(self, pos, radius=4):
     self.pos = pos
-    self.radius = radius
+    self.radius = radius + Ball.radius
 
   def contains(self, point):
     return (point - self.pos).dot(point - self.pos) <= self.radius * self.radius
 
-  def render(self, surface, color=(0, 0, 0)):
+  def render(self, surface):
     pygame.draw.circle(
-        surface, color, (self.pos.x, self.pos.y), self.radius)
+        surface, (48, 172, 9), (self.pos.x, self.pos.y), self.radius - Ball.radius + 1)
+    pygame.draw.circle(
+        surface, (0, 0, 0), (self.pos.x, self.pos.y), self.radius - Ball.radius)
 
 
 class Line:
