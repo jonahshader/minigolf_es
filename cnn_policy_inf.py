@@ -26,11 +26,7 @@ def policy(screen, model):
   screen_tensor = screen_tensor.unsqueeze(0)
 
   with torch.no_grad():
-    output = model(screen_tensor)
-    # output is a tensor of shape (1, 3)
-    # we want to pull out the scalars as direction, magnitude
-    hit_direction = output[0].numpy().tolist()
-    return Vec2(*hit_direction)
+    return model(screen_tensor)
 
 
 def run(model):
@@ -58,16 +54,8 @@ def run(model):
       state = make_state()
 
     if step(state, 1/60):
-      # hit_angle = random.uniform(0, 2 * math.pi)
-      # hit_speed = math.tanh(random.random() * 10 - 5) * 400
-      # hit_direction = Vec2(math.cos(hit_angle) * hit_speed, math.sin(hit_angle) * hit_speed)
-
-      # ball = state['ball']
-      # hole = state['hole']
-      # hit_direction = hole.pos - ball.pos
-      # hit_direction.set_magnitude(hit_direction.magnitude() * 2)
-
       hit_direction = policy(surface, model)
+      hit_direction = Vec2(*hit_direction[0].numpy().tolist())
       print(f'hit_direction: {hit_direction}')
       act(state, hit_direction)
 

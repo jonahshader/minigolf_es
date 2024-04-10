@@ -1,6 +1,8 @@
 from math import sqrt
 from utils import Vec2, Line, Rect, Wall, Ball, Hole
 import random
+import json
+from pprint import pprint
 
 
 def make_walls(ball_start, hole_start, size, wall_subsections, wall_chance, wall_overlap):
@@ -104,13 +106,15 @@ def step(state, dt) -> bool:
 
 
 def run(state, dt):
-  """Run the simulation until waiting for action."""
+  """Run the simulation until waiting for action or done."""
+  # TODO: there are some redundant checks here
   while not step(state, dt):
-    pass
+    if is_done(state):
+      break
 
 
-def act(state, hit_direction):
+def act(state, hit_direction, max_speed=400):
   """Apply the hit direction to the ball."""
   ball = state["ball"]
-  ball.vel = hit_direction * 400
+  ball.vel = hit_direction * max_speed
   state["strokes"] += 1
