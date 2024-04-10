@@ -1,6 +1,6 @@
 import math
 import random
-from env import make_state, is_done, step, act
+from env import make_state, is_done, step, act, state_loss
 from utils import Vec2
 import pygame
 
@@ -28,6 +28,7 @@ def run():
           state = make_state()
 
     if is_done(state):
+      print(state_loss(state))
       state = make_state()
 
     if step(state, 1/60):
@@ -38,8 +39,7 @@ def run():
       ball = state['ball']
       hole = state['hole']
       hit_direction = hole.pos - ball.pos
-      hit_direction.set_magnitude(hit_direction.magnitude() / 200)
-
+      hit_direction = hit_direction.set_magnitude(hit_direction.magnitude() * (1/400))
       act(state, hit_direction)
 
     surface = render_state(state, screen)

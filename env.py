@@ -71,7 +71,7 @@ def state_loss(state):
   strokes = state["strokes"]
   size = state["size"]
 
-  stroke_loss = ball.pos.distance_to(hole.center) / (size * sqrt(2))
+  stroke_loss = ball.pos.distance_to(hole.pos) / (size * sqrt(2))
   if hole.contains(ball.pos):
     stroke_loss = 0
 
