@@ -218,13 +218,13 @@ def train_step(states, model, optimizer, batch_size, pool: mp.Pool, device='cpu'
 
 if __name__ == '__main__':
   states_per_batch = 16
-  batch_size = 64
-  # device = 'cuda' if torch.cuda.is_available() else 'cpu'
-  device = 'cpu'
+  batch_size = 128
+  device = 'cuda' if torch.cuda.is_available() else 'cpu'
+  # device = 'cpu'
   model = BasicCNN().to(device)
   # model = ConstModel().to(device)
 
-  states = [make_state(max_strokes=2) for _ in range(states_per_batch)]
+  states = [make_state(max_strokes=1) for _ in range(states_per_batch)]
   # sanity check: remove all walls from the states
   # for state in states:
   #   state['walls'] = []
