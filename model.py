@@ -7,7 +7,7 @@ class BasicCNN(nn.Module):
     super().__init__()
     # (batch_size, 3, 256, 256)
     self.pool1 = nn.AvgPool2d(2, 2) # (batch_size, 3, 128, 128)
-    self.conv1 = nn.Conv2d(3, 8, 3, padding=1) # (batch_size, 8, 128, 128)
+    self.conv1 = nn.Conv2d(3+2, 8, 3, padding=1) # (batch_size, 8, 128, 128)
     self.pool2 = nn.MaxPool2d(2, 2) # (batch_size, 8, 64, 64)
     self.conv2 = nn.Conv2d(8, 16, 3, padding=1) # (batch_size, 16, 64, 64)
     self.pool3 = nn.MaxPool2d(4, 4) # (batch_size, 16, 16, 16)
@@ -17,8 +17,19 @@ class BasicCNN(nn.Module):
     self.fc2 = nn.Linear(128, 64)
     self.fc3 = nn.Linear(64, 3)
 
+    pixel_x_pos = torch.linspace(-1, 1, 128).unsqueeze(0).expand(128, -1)
+    pixel_y_pos = torch.linspace(-1, 1, 128).unsqueeze(1).expand(-1, 128)
+    pixel_pos = torch.stack([pixel_x_pos, pixel_y_pos], dim=0).unsqueeze(0) # (1, 2, 128, 128)
+    self.register_buffer('pixel_pos', pixel_pos)
+
   def forward(self, x):
     x = self.pool1(x)
+
+    # x is (batch_size, 3, 128, 128)
+    # want to add pixel position channels to get
+    # (batch_size, 5, 128, 128)
+    x = torch.cat([x, self.pixel_pos.expand(x.size(0), -1, -1, -1)], dim=1)
+
     x = self.pool2(F.gelu(self.conv1(x)))
     x = self.pool3(F.gelu(self.conv2(x)))
     x = self.pool4(F.gelu(self.conv3(x)))

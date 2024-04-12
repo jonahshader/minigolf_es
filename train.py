@@ -10,6 +10,7 @@ from torchvision.transforms import Compose, Normalize, ToTensor
 from copy import deepcopy
 # for parallel state running
 import multiprocessing as mp
+import pickle
 
 from env_render import render_state
 from compute_transform import create_transform
@@ -229,13 +230,17 @@ if __name__ == '__main__':
   # for state in states:
   #   state['walls'] = []
   pool = mp.Pool()
-  optimizer = torch.optim.Adam(model.parameters(), lr=1e-2)
+  optimizer = torch.optim.Adam(model.parameters(), lr=5e-3)
   # optimizer = torch.optim.SGD(model.parameters(), lr=1e-2)
 
   os.makedirs("models", exist_ok=True)
 
   eval_surface = None
   train_surfaces = None
+
+  # save the states
+  with open(os.path.join("models", "states.pkl"), "wb") as f:
+    pickle.dump(states, f)
 
   for i in range(400):
     print(f"Training iteration {i}")
@@ -251,8 +256,16 @@ if __name__ == '__main__':
         [deepcopy(states[0])], model, device, pool, eval_surface)
     print(f"Original model loss: {loss}")
 
-    if i % 10 == 0:
+    if i % 20 == 0:
       # save model
       torch.save(model.state_dict(), os.path.join("models", f"model_{i}.pt"))
       with open(os.path.join("models", f"model_{i}_losses.txt"), "w") as f:
-        f.write(str(losses))
+        f.write(str(losses) + "\n")
+        f.write(str(loss))
+
+  pool.close()
+  pool.join()
+  pool.terminate()
+
+  # save the final model
+  torch.save(model.state_dict(), os.path.join("models", "model_final.pt"))
