@@ -39,12 +39,13 @@ def run():
       ball = state['ball']
       hole = state['hole']
       hit_direction = hole.pos - ball.pos
-      hit_direction = hit_direction.set_magnitude(hit_direction.magnitude() * (1/400))
+      # hit_direction = hit_direction.set_magnitude(hit_direction.magnitude() * (1/400))
+      hit_direction = hit_direction.set_magnitude(1)
       act(state, hit_direction)
 
     surface = render_state(state, screen)
     pygame.display.flip()
-    clock.tick(165)
+    clock.tick(60)
 
   pygame.quit()
 

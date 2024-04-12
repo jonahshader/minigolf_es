@@ -1,4 +1,4 @@
-from model import BasicCNN
+from model import BasicCNN, ConstModel
 from env import make_state, is_done, step, act
 from utils import Vec2
 import pygame
@@ -67,4 +67,13 @@ def run(model):
 
 
 if __name__ == '__main__':
-  run(BasicCNN())
+  # run(BasicCNN())
+
+  # load model from models/model_10.pt
+  model1 = ConstModel()
+  model1.load_state_dict(torch.load('models/model_380.pt'))
+
+  # print some parameters
+  # print(model.conv1.weight)
+
+  run(model1)

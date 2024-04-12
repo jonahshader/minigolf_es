@@ -90,7 +90,7 @@ class Line:
 class Wall:
   thickness = 2
 
-  def __init__(self, line, bounce_coeff=0.9):
+  def __init__(self, line, bounce_coeff=0.95):
     self.line = line
     self.bounce_coeff = bounce_coeff
 
@@ -114,7 +114,7 @@ class Rect:
 
 
 class Ball:
-  friction = 12  # 1/s^2
+  friction = 20  # 1/s^2
   radius = 4
 
   def __init__(self, pos):

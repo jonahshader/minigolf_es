@@ -108,12 +108,30 @@ def step(state, dt) -> bool:
 def run(state, dt):
   """Run the simulation until waiting for action or done."""
   # TODO: there are some redundant checks here
+  # iters = 0
   while not step(state, dt):
     if is_done(state):
       break
+    # iters += 1
+    # if iters > 1000:
+    #   print("Infinite loop detected")
+    #   # print individual conditions
+    #   ball = state["ball"]
+    #   hole = state["hole"]
+    #   strokes = state["strokes"]
+    #   max_strokes = state["max_strokes"]
+
+    #   print(f"ball_stopped: {ball.vel.magnitude() == 0}")
+    #   print(f"hole_contains: {hole.contains(ball.pos)}")
+    #   print(f"strokes: {strokes}")
+    #   print(f"max_strokes: {max_strokes}")
+    #   print(f"ball_vel: {ball.vel}")
+      
+    #   # exit program
+    #   exit(1)
 
 
-def act(state, hit_direction, max_speed=400):
+def act(state, hit_direction, max_speed=200):
   """Apply the hit direction to the ball."""
   ball = state["ball"]
   ball.vel = hit_direction * max_speed
