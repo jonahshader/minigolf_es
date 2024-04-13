@@ -80,7 +80,7 @@ def state_loss(state):
   if hole.contains(ball.pos):
     stroke_loss = 0
 
-  return stroke_loss + strokes
+  return max(stroke_loss + strokes - 1, 0)
 
 
 def is_done(state):

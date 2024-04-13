@@ -1,2 +1,8 @@
 /__pycache__
 /models
+/test_early_exit
+/loss_change_1
+/higher_lr_1
+/lr_2
+/wandb
+model_1980.pt

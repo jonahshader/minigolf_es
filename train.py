@@ -1,5 +1,7 @@
 import os
 import time
+import signal
+import sys
 from model import BasicCNN, ConstModel
 from env import make_state, is_done, step, act, run, state_loss
 from utils import Vec2
@@ -11,6 +13,7 @@ from copy import deepcopy
 # for parallel state running
 import multiprocessing as mp
 import pickle
+import wandb
 
 from env_render import render_state
 from compute_transform import create_transform
@@ -100,7 +103,7 @@ def eval_batched(states, model, device, pool, surfaces=None):
       print(f"Total time: {end_time - render_start:.4f} seconds")
 
   # get the average loss for all states
-  return sum([state_loss(state) for state in states]) / len(states), surfaces
+  return [state_loss(state) for state in states], surfaces
 
 
 def train_step(states, model, optimizer, batch_size, pool: mp.Pool, device='cpu', standard_dev=0.01, surface_batches=None):
@@ -185,7 +188,7 @@ def train_step(states, model, optimizer, batch_size, pool: mp.Pool, device='cpu'
         print(f"Total time: {end_time - render_start:.4f} seconds")
 
     # get the average loss for each batch/model
-    losses = [sum([state_loss(state) for state in state_batch]) /
+    losses = [(sum([state_loss(state) ** 2 for state in state_batch]) ** 0.5) /
               len(state_batch) for state_batch in states_batches]
     losses = torch.tensor(losses)
 
@@ -216,56 +219,103 @@ def train_step(states, model, optimizer, batch_size, pool: mp.Pool, device='cpu'
 
     return losses, surface_batches
 
+early_exit = False
+def signal_handler(sig, frame):
+  global early_exit
+  early_exit = True
+  print("Early exit requested")
+
+signal.signal(signal.SIGINT, signal_handler)
 
 if __name__ == '__main__':
   states_per_batch = 16
   batch_size = 128
+  lr = 2e-3
+  standard_dev = 0.01
+  run_name = "lr_2"
   device = 'cuda' if torch.cuda.is_available() else 'cpu'
   # device = 'cpu'
   model = BasicCNN().to(device)
   # model = ConstModel().to(device)
+
+  use_wandb = True
 
   states = [make_state(max_strokes=1) for _ in range(states_per_batch)]
   # sanity check: remove all walls from the states
   # for state in states:
   #   state['walls'] = []
   pool = mp.Pool()
-  optimizer = torch.optim.Adam(model.parameters(), lr=5e-3)
-  # optimizer = torch.optim.SGD(model.parameters(), lr=1e-2)
+  optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
-  os.makedirs("models", exist_ok=True)
+  # create the run directory
+  os.makedirs(run_name, exist_ok=True)
+
+  # automatically add the run directory to .gitignore
+  with open(".gitignore", "a") as f:
+    f.write(f"\n/{run_name}")
 
   eval_surface = None
   train_surfaces = None
 
   # save the states
-  with open(os.path.join("models", "states.pkl"), "wb") as f:
+  with open(os.path.join(run_name, "states.pkl"), "wb") as f:
     pickle.dump(states, f)
 
-  for i in range(400):
+  config = {
+      "states_per_batch": states_per_batch,
+      "batch_size": batch_size,
+      "model_type": type(model).__name__,
+      "optimizer": type(optimizer).__name__,
+      "lr": lr,
+  }
+
+  if use_wandb:
+    wandb.init(project="minigolf_es", config=config, name=run_name)
+
+  best_avg_loss = None
+  for i in range(2000):
+    if early_exit:
+      break
     print(f"Training iteration {i}")
     losses, train_surfaces = train_step(states, model, optimizer, batch_size,
-                                        pool, device=device, standard_dev=0.01, surface_batches=train_surfaces)
+                                        pool, device=device, standard_dev=standard_dev, surface_batches=train_surfaces)
     # sort the losses
     losses = losses.cpu().numpy()
     losses = losses[np.argsort(losses)]
-    print(f"Avg loss:\n{losses.mean()}")
+    avg_loss = losses.mean()
+    print(f"Avg loss:{avg_loss}")
 
     # evaluate original model
     loss, eval_surface = eval_batched(
-        [deepcopy(states[0])], model, device, pool, eval_surface)
-    print(f"Original model loss: {loss}")
+        deepcopy(states), model, device, pool, eval_surface)
+    print(f"Original model loss: {sum(loss) / len(loss)}")
+
+    if use_wandb:
+      log_info = {
+          "avg_loss": avg_loss,
+          "min_loss": losses.min(),
+          "max_loss": losses.max(),
+          "center_loss": sum(loss) / len(loss),
+      }
+      # # add each episode loss to the log
+      # for j, l in enumerate(loss):
+      #   log_info[f"epi_loss_{j}"] = l
+      wandb.log(log_info)
 
     if i % 20 == 0:
-      # save model
-      torch.save(model.state_dict(), os.path.join("models", f"model_{i}.pt"))
-      with open(os.path.join("models", f"model_{i}_losses.txt"), "w") as f:
-        f.write(str(losses) + "\n")
-        f.write(str(loss))
+      if best_avg_loss is None or avg_loss < best_avg_loss:
+        best_avg_loss = avg_loss
+        torch.save(model.state_dict(), os.path.join(run_name, "model_best.pt"))
+        with open(os.path.join(run_name, "model_best_losses.txt"), "w") as f:
+          f.write(f"Best avg loss: {best_avg_loss}\n")
+          f.write(f"Iteration: {i}\n")
+      torch.save(model.state_dict(), os.path.join(run_name, "model_latest.pt"))
+
 
   pool.close()
   pool.join()
   pool.terminate()
 
   # save the final model
-  torch.save(model.state_dict(), os.path.join("models", "model_final.pt"))
+  print("Saving final model")
+  torch.save(model.state_dict(), os.path.join(run_name, "model_final.pt"))
