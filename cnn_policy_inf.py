@@ -1,4 +1,4 @@
-from model import BasicCNN, ConstModel, BasicCNNNoMag
+from model import BasicCNN, ConstModel, BasicCNNNoMag, TinyCNN
 from env import make_state, is_done, step, act
 from utils import Vec2
 import pygame
@@ -33,10 +33,10 @@ def policy(screen, model, transform):
     return model(screen_tensor)
 
 
-def run(model, transform):
+def run(model, transform, make_state_func=make_state):
   print('Testing cnn policy...')
 
-  state = make_state()
+  state = make_state_func()
   screen = pygame.display.set_mode(
       (state['size'], state['size']), pygame.SCALED | pygame.RESIZABLE)
   surface = render_state(state, screen)
@@ -52,10 +52,10 @@ def run(model, transform):
         if event.key == pygame.K_ESCAPE:
           running = False
         elif event.key == pygame.K_SPACE:
-          state = make_state()
+          state = make_state_func()
 
     if is_done(state):
-      state = make_state()
+      state = make_state_func()
 
     if step(state, 1/60):
       hit_direction = policy(surface, model, transform)
@@ -71,11 +71,11 @@ def run(model, transform):
 
 
 if __name__ == '__main__':
-  run_name = 'testing_inference'
-  model_type = BasicCNNNoMag
+  run_name = 'tiny_cnn_1_faster'
+  model_type = TinyCNN
 
   model1 = model_type()
-  model1.load_state_dict(torch.load(os.path.join(run_name, f'model_best.pt')))
+  model1.load_state_dict(torch.load(os.path.join(run_name, f'model_final.pt')))
 
   # try loading the transform
   try:
@@ -86,5 +86,11 @@ if __name__ == '__main__':
     print('Transform not found, creating new one...')
     transform = create_transform()
 
-  run(model1, transform)
+  def make_state_func():
+    s = make_state()
+    # remove walls
+    s['walls'] = []
+    return s
+
+  run(model1, transform, make_state_func)
 
