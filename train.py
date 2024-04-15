@@ -1,7 +1,7 @@
 import os
 import time
 import signal
-from model import BasicCNN, ConstModel, BasicCNNNoMag
+from model import BasicCNN, ConstModel, BasicCNNNoMag, TinyCNN
 from env import make_state, is_done, step, act, run, state_loss
 from utils import Vec2
 import pygame
@@ -20,7 +20,7 @@ from compute_transform import create_transform
 print_timings = False
 
 # create transform to normalize pixel values
-transform = create_transform()
+# transform = create_transform()
 
 
 def policy_batched(surfaces: list, model, device):
@@ -228,12 +228,12 @@ signal.signal(signal.SIGINT, signal_handler)
 
 if __name__ == '__main__':
   use_wandb = True
-  states_per_batch = 16
-  batch_size = 1024
+  states_per_batch = 2
+  batch_size = 128
   lr = 1e-3
-  standard_dev = 0.02
-  model_type = BasicCNNNoMag
-  run_name = "big_batch_2"
+  standard_dev = 0.01
+  model_type = TinyCNN
+  run_name = "tiny_cnn_1_faster"
   device = 'cuda' if torch.cuda.is_available() else 'cpu'
   pool = mp.Pool()
 
@@ -242,6 +242,9 @@ if __name__ == '__main__':
   # test: remove walls
   for state in states:
     state["walls"] = []
+
+  # override default transform
+  transform = create_transform(states)
 
   model = model_type().to(device)
   init_surfaces = None

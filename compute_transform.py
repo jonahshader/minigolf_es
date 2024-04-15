@@ -7,11 +7,10 @@ import torch
 # transforms
 from torchvision.transforms import Normalize
 
-def create_transform():
-  """Create a virtual batch normalization layer."""
-
+def create_transform(states=None):
   # Create a batch of states
-  states = [make_state() for _ in range(64)]
+  if states is None:
+    states = [make_state() for _ in range(64)]
 
   # Render all states
   surfaces = [render_state(state) for state in states]
