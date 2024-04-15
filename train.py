@@ -228,12 +228,12 @@ signal.signal(signal.SIGINT, signal_handler)
 
 if __name__ == '__main__':
   use_wandb = True
-  states_per_batch = 4
-  batch_size = 128
+  states_per_batch = 16
+  batch_size = 1024
   lr = 1e-3
-  standard_dev = 0.01
+  standard_dev = 0.02
   model_type = BasicCNNNoMag
-  run_name = "testing_inference"
+  run_name = "big_batch_2"
   device = 'cuda' if torch.cuda.is_available() else 'cpu'
   pool = mp.Pool()
 
@@ -247,17 +247,17 @@ if __name__ == '__main__':
   init_surfaces = None
   best_model_loss, init_surfaces = eval_batched(deepcopy(states), model, device, pool, init_surfaces)
   best_model_loss = sum(best_model_loss) / len(best_model_loss)
-  # find a good initial model
-  print("Looking for a good initial model...")
-  for i in range(100):
-    print(f"Initial model iteration {i}")
-    new_model = model_type().to(device)
-    new_model_loss, _ = eval_batched(deepcopy(states), new_model, device, pool, init_surfaces)
-    new_model_loss = sum(new_model_loss) / len(new_model_loss)
-    if new_model_loss < best_model_loss:
-      model = new_model
-      best_model_loss = new_model_loss
-      print(f"Found better model: {best_model_loss}")
+  # # find a good initial model
+  # print("Looking for a good initial model...")
+  # for i in range(100):
+  #   print(f"Initial model iteration {i}")
+  #   new_model = model_type().to(device)
+  #   new_model_loss, _ = eval_batched(deepcopy(states), new_model, device, pool, init_surfaces)
+  #   new_model_loss = sum(new_model_loss) / len(new_model_loss)
+  #   if new_model_loss < best_model_loss:
+  #     model = new_model
+  #     best_model_loss = new_model_loss
+  #     print(f"Found better model: {best_model_loss}")
 
 
 
@@ -290,6 +290,7 @@ if __name__ == '__main__':
   }
 
   if use_wandb:
+    wandb.login()
     wandb.init(project="minigolf_es", config=config, name=run_name)
 
   best_avg_loss = None

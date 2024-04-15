@@ -101,3 +101,26 @@ class ConstModel(nn.Module):
     output = output * torch.tanh(self.magnitude)
     # match the batch size
     return output.repeat(x.size(0), 1)
+  
+
+class TinyCNN(nn.Module):
+  def __init__(self):
+    super().__init__()
+    # (batch_size, 3, 256, 256)
+    self.pool1 = nn.AvgPool2d(4, 4) # (batch_size, 3, 64, 64)
+    self.conv1 = nn.Conv2d(3, 8, 3, stride=2, padding=1) # (batch_size, 8, 32, 32)
+    self.pool2 = nn.MaxPool2d(4, 4) # (batch_size, 8, 8, 8)
+    self.conv2 = nn.Conv2d(8, 8, 3, stride=2, padding=1) # (batch_size, 8, 4, 4)
+    self.fc1 = nn.Linear(8 * 4 * 4, 16)
+    self.fc2 = nn.Linear(16, 16)
+    self.fc3 = nn.Linear(16, 2)
+
+  def forward(self, x):
+    x = self.pool1(x)
+    x = self.pool2(F.gelu(self.conv1(x)))
+    x = F.gelu(self.conv2(x))
+    x = torch.flatten(x, 1)
+    x = F.gelu(self.fc1(x))
+    x = x + F.gelu(self.fc2(x))
+    x = F.tanh(self.fc3(x))
+    return x
