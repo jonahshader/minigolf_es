@@ -2,7 +2,7 @@ import os
 import time
 import signal
 import sys
-from model import BasicCNN, ConstModel
+from model import BasicCNN, ConstModel, BasicCNNNoMag
 from env import make_state, is_done, step, act, run, state_loss
 from utils import Vec2
 import pygame
@@ -188,7 +188,7 @@ def train_step(states, model, optimizer, batch_size, pool: mp.Pool, device='cpu'
         print(f"Total time: {end_time - render_start:.4f} seconds")
 
     # get the average loss for each batch/model
-    losses = [(sum([state_loss(state) ** 2 for state in state_batch]) ** 0.5) /
+    losses = [(sum([state_loss(state) for state in state_batch])) /
               len(state_batch) for state_batch in states_batches]
     losses = torch.tensor(losses)
 
@@ -228,23 +228,41 @@ def signal_handler(sig, frame):
 signal.signal(signal.SIGINT, signal_handler)
 
 if __name__ == '__main__':
-  states_per_batch = 16
-  batch_size = 128
-  lr = 2e-3
+  states_per_batch = 1
+  batch_size = 256
+  lr = 1e-3
   standard_dev = 0.01
-  run_name = "lr_2"
+  model_type = ConstModel
+  run_name = "low_states_const"
   device = 'cuda' if torch.cuda.is_available() else 'cpu'
-  # device = 'cpu'
-  model = BasicCNN().to(device)
-  # model = ConstModel().to(device)
+  pool = mp.Pool()
+
 
   use_wandb = True
 
   states = [make_state(max_strokes=1) for _ in range(states_per_batch)]
-  # sanity check: remove all walls from the states
-  # for state in states:
-  #   state['walls'] = []
-  pool = mp.Pool()
+  # test: remove walls
+  for state in states:
+    state["walls"] = []
+
+  model = model_type().to(device)
+  init_surfaces = None
+  best_model_loss, init_surfaces = eval_batched(deepcopy(states), model, device, pool, init_surfaces)
+  best_model_loss = sum(best_model_loss) / len(best_model_loss)
+  # find a good initial model
+  print("Looking for a good initial model...")
+  for i in range(100):
+    print(f"Initial model iteration {i}")
+    new_model = model_type().to(device)
+    new_model_loss, _ = eval_batched(deepcopy(states), new_model, device, pool, init_surfaces)
+    new_model_loss = sum(new_model_loss) / len(new_model_loss)
+    if new_model_loss < best_model_loss:
+      model = new_model
+      best_model_loss = new_model_loss
+      print(f"Found better model: {best_model_loss}")
+
+
+
   optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
   # create the run directory

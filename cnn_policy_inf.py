@@ -70,10 +70,14 @@ if __name__ == '__main__':
   # run(BasicCNN())
 
   # load model from models/model_10.pt
-  model1 = BasicCNN()
-  model1.load_state_dict(torch.load('models/model_40.pt'))
+  # model1 = BasicCNN()
+  # model1.load_state_dict(torch.load('models/model_40.pt'))
+
+  model1 = ConstModel()
+  model1.load_state_dict(torch.load('low_states_const/model_final.pt'))
+
 
   # print some parameters
   # print(model.conv1.weight)
 
-  run(model1)
+  # run(model1)
