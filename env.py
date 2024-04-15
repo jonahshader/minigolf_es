@@ -64,7 +64,7 @@ def make_state(size=256, max_strokes=4, wall_subsections=5, wall_chance=0.5, wal
   }
 
 
-def state_loss(state, frame_cost=0.001, bounce_cost=0):
+def state_loss(state, frame_cost=0, bounce_cost=0):
   """Return the loss for the current state."""
 
   # rough scenarios in order from lowest to highest loss:

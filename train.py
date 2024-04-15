@@ -234,7 +234,8 @@ if __name__ == '__main__':
   standard_dev = 0.01
   random_states = True
   model_type = TinyCNN2
-  run_name = "TinyCNN2_1"
+  run_name = "TinyCNN2_2"
+  resume_from ="TinyCNN2_1"
   device = 'cuda' if torch.cuda.is_available() else 'cpu'
   pool = mp.Pool()
 
@@ -249,6 +250,8 @@ if __name__ == '__main__':
   transform = create_transform(states)
 
   model = model_type().to(device)
+  if resume_from is not None:
+    model.load_state_dict(torch.load(os.path.join(resume_from, "model_latest.pt")))
   init_surfaces = None
   best_model_loss, init_surfaces = eval_batched(deepcopy(states), model, device, pool, init_surfaces)
   best_model_loss = sum(best_model_loss) / len(best_model_loss)
@@ -290,6 +293,7 @@ if __name__ == '__main__':
       "states_per_batch": states_per_batch,
       "batch_size": batch_size,
       "random_states": random_states,
+      "resume_from": resume_from,
       "model_type": type(model).__name__,
       "optimizer": type(optimizer).__name__,
       "lr": lr,

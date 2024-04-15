@@ -1,4 +1,4 @@
-from model import BasicCNN, ConstModel, BasicCNNNoMag, TinyCNN
+from model import BasicCNN, ConstModel, BasicCNNNoMag, TinyCNN, TinyCNN2
 from env import make_state, is_done, step, act
 from utils import Vec2
 import pygame
@@ -65,21 +65,21 @@ def run(model, transform, make_state_func=make_state):
 
     surface = render_state(state, screen)
     pygame.display.flip()
-    clock.tick(165)
+    clock.tick(60)
 
   pygame.quit()
 
 
 if __name__ == '__main__':
-  run_name = 'tiny_cnn_1_faster'
-  model_type = TinyCNN
+  run_name = 'TinyCNN2_1'
+  model_type = TinyCNN2
 
   model1 = model_type()
   model1.load_state_dict(torch.load(os.path.join(run_name, f'model_final.pt')))
 
   # try loading the transform
   try:
-    with open(os.join(run_name, 'transform.pkl'), 'rb') as f:
+    with open(os.path.join(run_name, 'transform.pkl'), 'rb') as f:
       print('Loading transform...')
       transform = pickle.load(f)
   except:
