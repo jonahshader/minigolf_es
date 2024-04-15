@@ -1,7 +1,6 @@
 import os
 import time
 import signal
-import sys
 from model import BasicCNN, ConstModel, BasicCNNNoMag
 from env import make_state, is_done, step, act, run, state_loss
 from utils import Vec2
@@ -228,17 +227,16 @@ def signal_handler(sig, frame):
 signal.signal(signal.SIGINT, signal_handler)
 
 if __name__ == '__main__':
-  states_per_batch = 1
-  batch_size = 256
+  use_wandb = True
+  states_per_batch = 4
+  batch_size = 128
   lr = 1e-3
   standard_dev = 0.01
-  model_type = ConstModel
-  run_name = "low_states_const"
+  model_type = BasicCNNNoMag
+  run_name = "testing_inference"
   device = 'cuda' if torch.cuda.is_available() else 'cpu'
   pool = mp.Pool()
 
-
-  use_wandb = True
 
   states = [make_state(max_strokes=1) for _ in range(states_per_batch)]
   # test: remove walls
@@ -279,6 +277,10 @@ if __name__ == '__main__':
   with open(os.path.join(run_name, "states.pkl"), "wb") as f:
     pickle.dump(states, f)
 
+  # save the transform
+  with open(os.path.join(run_name, "transform.pkl"), "wb") as f:
+    pickle.dump(transform, f)
+
   config = {
       "states_per_batch": states_per_batch,
       "batch_size": batch_size,
@@ -315,9 +317,6 @@ if __name__ == '__main__':
           "max_loss": losses.max(),
           "center_loss": sum(loss) / len(loss),
       }
-      # # add each episode loss to the log
-      # for j, l in enumerate(loss):
-      #   log_info[f"epi_loss_{j}"] = l
       wandb.log(log_info)
 
     if i % 20 == 0:

@@ -2,13 +2,14 @@ import pygame
 from env import make_state
 
 
-def render_state(state, surface=None):
+def render_state(state, surface=None, extras=False):
   pygame.init()
 
   ball = state['ball']
   hole = state['hole']
   walls = state['walls']
   size = state['size']
+  ball_start = state['ball_start']
 
   # make render target if not provided
   if surface is None:
@@ -21,7 +22,15 @@ def render_state(state, surface=None):
   hole.render(surface)
   for wall in walls:
     wall.render(surface)
+
+  if extras:
+    # render ball start
+    pygame.draw.circle(surface, (255, 0, 0),
+                       (int(ball_start.x), int(ball_start.y)), 2)
+
+
   ball.render(surface)
+
 
   return surface
 

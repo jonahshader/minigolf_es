@@ -114,7 +114,7 @@ class Rect:
 
 
 class Ball:
-  friction = 20  # 1/s^2
+  friction = 25  # 1/s^2
   radius = 4
 
   def __init__(self, pos):
@@ -129,7 +129,7 @@ class Ball:
     pygame.draw.circle(surface, (225, 255, 255),
                        (self.pos.x, self.pos.y), Ball.radius)
 
-  def update(self, state, dt) -> bool:
+  def update(self, state, dt) -> tuple[bool, bool]:
     """Update the ball's state and return whether the ball is stopped."""
     hole = state["hole"]
     walls = state["walls"]
@@ -141,6 +141,7 @@ class Ball:
     # check if the ball hits a wall
     # simple collision resolution: move the ball back and reflect the velocity
     movement = Line(old_pos, self.pos)
+    bounced = False
     for wall in walls:
       intersection = wall.line.intersect(movement)
       if intersection is not None:
@@ -148,6 +149,7 @@ class Ball:
         normal = (wall.line.end - wall.line.start).set_magnitude(1)
         normal = Vec2(-normal.y, normal.x)
         self.vel = self.vel - normal * wall.bounce_coeff * self.vel.dot(normal) * 2
+        bounced = True
 
     # check if the ball is in the hole
     if hole.contains(self.pos):
@@ -159,4 +161,4 @@ class Ball:
     new_vel_mag = max(0, vel_mag - Ball.friction * dt)
     self.vel = self.vel.set_magnitude(new_vel_mag)
 
-    return new_vel_mag == 0
+    return new_vel_mag == 0, bounced

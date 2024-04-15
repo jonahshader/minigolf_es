@@ -53,15 +53,18 @@ def make_state(size=256, max_strokes=4, wall_subsections=5, wall_chance=0.5, wal
 
   return {
       "ball": Ball(ball_start),
+      "ball_start": ball_start,
       "hole": Hole(hole_start),
       "walls": walls,
       "strokes": 0,
       "size": size,
+      "frames": 0,
+      "bounces": 0,
       "max_strokes": max_strokes
   }
 
 
-def state_loss(state):
+def state_loss(state, frame_cost=0.001, bounce_cost=0):
   """Return the loss for the current state."""
 
   # rough scenarios in order from lowest to highest loss:
@@ -75,12 +78,14 @@ def state_loss(state):
   hole = state["hole"]
   strokes = state["strokes"]
   size = state["size"]
+  frames = state["frames"]
+  bounces = state["bounces"]
 
   stroke_loss = ball.pos.distance_to(hole.pos) / (size * sqrt(2))
   if hole.contains(ball.pos):
     stroke_loss = 0
 
-  return max(stroke_loss + strokes - 1, 0)
+  return max(stroke_loss + strokes - 1, 0) + frame_cost * frames + bounce_cost * bounces
 
 
 def is_done(state):
@@ -101,9 +106,13 @@ def step(state, dt) -> bool:
   hole = state["hole"]
   strokes = state["strokes"]
   max_strokes = state["max_strokes"]
+  state["frames"] += 1
 
   # update ball
-  ball_stopped = ball.update(state, dt)
+  ball_stopped, bounced = ball.update(state, dt)
+
+  if bounced:
+    state["bounces"] += 1
 
   return ball_stopped and not hole.contains(ball.pos) and strokes < max_strokes
 
