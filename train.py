@@ -1,7 +1,7 @@
 import os
 import time
 import signal
-from model import BasicCNN, ConstModel, BasicCNNNoMag, TinyCNN
+from model import BasicCNN, ConstModel, BasicCNNNoMag, TinyCNN, TinyCNN2
 from env import make_state, is_done, step, act, run, state_loss
 from utils import Vec2
 import pygame
@@ -228,20 +228,22 @@ signal.signal(signal.SIGINT, signal_handler)
 
 if __name__ == '__main__':
   use_wandb = True
-  states_per_batch = 2
-  batch_size = 128
+  states_per_batch = 16
+  batch_size = 256
   lr = 1e-3
   standard_dev = 0.01
-  model_type = TinyCNN
-  run_name = "tiny_cnn_1_faster"
+  random_states = True
+  model_type = TinyCNN2
+  run_name = "TinyCNN2_1"
   device = 'cuda' if torch.cuda.is_available() else 'cpu'
   pool = mp.Pool()
 
+  def state_builder():
+    s = make_state(max_strokes=1)
+    s['walls'] = []
+    return s
 
-  states = [make_state(max_strokes=1) for _ in range(states_per_batch)]
-  # test: remove walls
-  for state in states:
-    state["walls"] = []
+  states = [state_builder() for _ in range(states_per_batch)]
 
   # override default transform
   transform = create_transform(states)
@@ -287,6 +289,7 @@ if __name__ == '__main__':
   config = {
       "states_per_batch": states_per_batch,
       "batch_size": batch_size,
+      "random_states": random_states,
       "model_type": type(model).__name__,
       "optimizer": type(optimizer).__name__,
       "lr": lr,
@@ -301,6 +304,8 @@ if __name__ == '__main__':
     if early_exit:
       break
     print(f"Training iteration {i}")
+    if random_states:
+      states = [state_builder() for _ in range(states_per_batch)]
     losses, train_surfaces = train_step(states, model, optimizer, batch_size,
                                         pool, device=device, standard_dev=standard_dev, surface_batches=train_surfaces)
     # sort the losses
