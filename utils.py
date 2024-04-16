@@ -102,15 +102,26 @@ class Wall:
 
 
 class Rect:
-  def __init__(self, pos, size):
-    self.pos = pos
-    self.size = size
+    def __init__(self, pos, size):
+        self.pos = pos
+        self.size = size
 
-  def contains(self, point):
-    return self.pos.x <= point.x <= self.pos.x + self.size.x and self.pos.y <= point.y <= self.pos.y + self.size.y
+    def contains(self, point):
+        return self.pos.x <= point.x <= self.pos.x + self.size.x and self.pos.y <= point.y <= self.pos.y + self.size.y
 
-  def create_random_inside(self):
-    return Vec2(self.pos.x + random.random() * self.size.x, self.pos.y + random.random() * self.size.y)
+    def create_random_inside(self):
+        return Vec2(self.pos.x + random.random() * self.size.x, self.pos.y + random.random() * self.size.y)
+
+    def render(self, surface):
+        # Define grass colors
+        light_green = (122, 194, 111)
+        dark_green = (86, 157, 77)
+
+        # Draw the grassy texture
+        for y in range(int(self.pos.y), int(self.pos.y + self.size.y), 2):
+            for x in range(int(self.pos.x), int(self.pos.x + self.size.x), 2):
+                color = light_green if random.random() > 0.5 else dark_green
+                pygame.draw.rect(surface, color, (x, y, 2, 2))
 
 
 class Ball:
