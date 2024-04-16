@@ -156,6 +156,9 @@ def train(config):
         wandb.log({'loss': loss.item(), 'iter': i})
 
   os.makedirs(run_name, exist_ok=True)
+  # automatically add the run directory to .gitignore
+  with open(".gitignore", "a") as f:
+    f.write(f"\n/{run_name}")
   torch.save(model.state_dict(), os.path.join(run_name, 'model_final.pt'))
   with open(os.path.join(run_name, 'transform.pkl'), 'wb') as f:
     pickle.dump(transform, f)
@@ -164,7 +167,20 @@ def train(config):
     pickle.dump(config, f)
 
 
+def default_config():
+  return {
+    'device': torch.device('cuda' if torch.cuda.is_available() else 'cpu'),
+    'use_wandb': True,
+    'batch_size': 64,
+    'iters': 1000,
+    'model_type': BasicAutoencoder,
+    'lr': 1e-3,
+    'run_name': 'basic_autoencoder',
+    'state_builder': make_state,
+  }
+
+
 if __name__ == '__main__':
-  device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-  print(f'Using device {device}')
-  train(device)
+  config = default_config()
+  config['run_name'] = 'basic_1'
+  train(config)
