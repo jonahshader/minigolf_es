@@ -1,6 +1,7 @@
 import os
 import pickle
 from copy import deepcopy
+import random
 
 import torch
 import torch.nn as nn
@@ -8,6 +9,7 @@ import torch.nn as nn
 from compute_transform import create_transform
 from env import make_state
 from env_render import render_state_tensor
+from utils import Ball, Vec2
 
 
 class BasicCNNEncoder(nn.Module):
@@ -180,8 +182,17 @@ if __name__ == '__main__':
   constructor_args = {'latent_dim': None}
   config['constructor_args'] = constructor_args
   model = config['model_type'](**constructor_args)
-  config['iters'] = 500
-  config['batch_size'] = 512
+  config['iters'] = 2000
+  config['batch_size'] = 128
 
-  config['run_name'] = 'basic_3_no_linear'
+  def build_state():
+    s = make_state()
+    ball_start = Vec2(random.random(), random.random()) * 256
+    s['ball'] = Ball(ball_start)
+    s['ball_start'] = ball_start
+    return s
+  
+  config['state_builder'] = build_state
+
+  config['run_name'] = 'basic_3_no_linear_longer'
   train(config, model)
