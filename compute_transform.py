@@ -10,7 +10,7 @@ from torchvision.transforms import Normalize
 def create_transform(states=None):
   # Create a batch of states
   if states is None:
-    states = [make_state() for _ in range(64)]
+    states = [make_state() for _ in range(512)]
 
   # Render all states
   surfaces = [render_state(state) for state in states]
@@ -22,7 +22,7 @@ def create_transform(states=None):
   ] # list of numpy arrays of shape (size, size, 3)
 
   # Convert the RGB arrays to a PyTorch tensor
-  # first convert the list of numpy arrays to a numpy array of shape (64, size, size, 3)
+  # first convert the list of numpy arrays to a numpy array of shape (512, size, size, 3)
   surface_tensor = torch.from_numpy(np.stack(surface_rgb)).float()
   
 

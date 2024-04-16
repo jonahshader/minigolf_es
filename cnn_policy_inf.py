@@ -1,4 +1,4 @@
-from model import BasicCNN, ConstModel, BasicCNNNoMag, TinyCNN, TinyCNN2
+from model import BasicCNN, ConstModel, BasicCNNNoMag, TinyCNN, TinyCNN2, TinyCNN3
 from env import make_state, is_done, step, act
 from utils import Vec2
 import pygame
@@ -71,8 +71,8 @@ def run(model, transform, make_state_func=make_state):
 
 
 if __name__ == '__main__':
-  run_name = 'TinyCNN2_1'
-  model_type = TinyCNN2
+  run_name = 'TinyCNN3_1'
+  model_type = TinyCNN3
 
   model1 = model_type()
   model1.load_state_dict(torch.load(os.path.join(run_name, f'model_final.pt')))
@@ -87,7 +87,7 @@ if __name__ == '__main__':
     transform = create_transform()
 
   def make_state_func():
-    s = make_state()
+    s = make_state(max_strokes=1)
     # remove walls
     s['walls'] = []
     return s

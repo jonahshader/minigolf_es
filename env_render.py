@@ -1,4 +1,6 @@
+import numpy as np
 import pygame
+import torch
 from env import make_state
 
 
@@ -27,12 +29,24 @@ def render_state(state, surface=None, extras=False):
     # render ball start
     pygame.draw.circle(surface, (255, 0, 0),
                        (int(ball_start.x), int(ball_start.y)), 2)
-
-
   ball.render(surface)
-
-
   return surface
+
+
+def render_state_tensor(states, transform=None):
+  surface = None
+  tensors = []
+  for state in states:
+    surface = render_state(state, surface)
+    surface_rgb = np.ascontiguousarray(pygame.surfarray.pixels3d(surface))
+    surface_rgb = torch.from_numpy(surface_rgb).float()
+    surface_rgb = surface_rgb.permute(2, 0, 1)
+    if transform is not None:
+      surface_rgb = transform(surface_rgb)
+    surface_rgb = surface_rgb.unsqueeze(0)
+    tensors.append(surface_rgb)
+
+  return torch.cat(tensors, dim=0)
 
 
 if __name__ == '__main__':
