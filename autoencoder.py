@@ -136,9 +136,9 @@ def train(config):
   if use_wandb:
     import wandb
     # override non string values
-    config = {**config, 'device': str(device), 'model_type': str(model_type)}
+    wandb_config = {**config, 'device': str(device), 'model_type': model_type.__class__.__name__}
     # remove non serializable values
-    config.pop('state_builder')
+    wandb_config.pop('state_builder')
     wandb.init(project='minigolf_es_autoencoder', config=config, name=run_name)
 
   for i in range(iters):
