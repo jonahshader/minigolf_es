@@ -33,23 +33,23 @@ def render_autoencoder(model, state_builder, transform: Normalize):
 
 
 if __name__ == '__main__':
-  run_name = 'basic_1'
+  run_name = 'basic_2'
 
   # load the config and model
   with open(os.path.join(run_name, 'config.pkl'), 'rb') as f:
     config = pickle.load(f)
 
+  model_type = config['model_type']
+  constructor_args = config['constructor_args']
+  state_builder = config['state_builder']
 
-  print(f'Loading model of type {config["model_type"].__name__}')
-  model = config['model_type']()
+  print(f'Loading model of type {model_type.__name__}')
+  model = model_type(**constructor_args)
   model.load_state_dict(torch.load(os.path.join(run_name, 'model_final.pt')))
 
   # load the transform
   with open(os.path.join(run_name, 'transform.pkl'), 'rb') as f:
     transform = pickle.load(f)
-
-  # load the state builder
-  state_builder = config['state_builder']
 
   # create pygame loop. wait for space press to render a new frame
   pygame.init()

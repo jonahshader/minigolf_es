@@ -1,5 +1,6 @@
 import os
 import pickle
+from copy import deepcopy
 
 import torch
 import torch.nn as nn
@@ -42,7 +43,7 @@ class BasicCNNEncoder(nn.Module):
         nn.Conv2d(4*out_channels, 4*out_channels,
                   3, padding=1, stride=2),  # 8
         nn.Flatten(),
-        nn.Linear(8*8*4*out_channels, latent_dim),
+        nn.Linear(8*8*4*out_channels, latent_dim) if latent_dim is not None else nn.Identity(),
     )
 
   def forward(self, x):
@@ -56,7 +57,7 @@ class BasicCNNDecoder(nn.Module):
     act_fn = nn.ReLU()
 
     self.net = nn.Sequential(
-        nn.Linear(latent_dim, 4*out_channels*8*8),
+        nn.Linear(latent_dim, 4*out_channels*8*8) if latent_dim is not None else nn.Identity(),
         nn.Unflatten(1, (4*out_channels, 8, 8)),
 
         # (8, 8)
@@ -129,7 +130,7 @@ def train(config, model):
   if use_wandb:
     import wandb
     # override non string values
-    wandb_config = {**config, 'device': str(device), 'model_type': model_type.__class__.__name__}
+    wandb_config = {**deepcopy(config), 'device': str(device), 'model_type': model_type.__class__.__name__}
     # remove non serializable values
     wandb_config.pop('state_builder')
     wandb.init(project='minigolf_es_autoencoder', config=config, name=run_name)
@@ -176,8 +177,11 @@ def default_config():
 if __name__ == '__main__':
   config = default_config()
   config['model_type'] = BasicAutoencoder
-  model = config['model_type'](latent_dim=2048)
+  constructor_args = {'latent_dim': None}
+  config['constructor_args'] = constructor_args
+  model = config['model_type'](**constructor_args)
   config['iters'] = 500
+  config['batch_size'] = 512
 
-  config['run_name'] = 'basic_2'
+  config['run_name'] = 'basic_3_no_linear'
   train(config, model)
