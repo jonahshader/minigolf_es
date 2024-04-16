@@ -1,7 +1,7 @@
 import os
 import time
 import signal
-from model import BasicCNN, ConstModel, BasicCNNNoMag, TinyCNN, TinyCNN2
+from model import BasicCNN, ConstModel, BasicCNNNoMag, TinyCNN, TinyCNN2, TinyCNN3
 from env import make_state, is_done, step, act, run, state_loss
 from utils import Vec2
 import pygame
@@ -187,7 +187,7 @@ def train_step(states, model, optimizer, batch_size, pool: mp.Pool, device='cpu'
         print(f"Total time: {end_time - render_start:.4f} seconds")
 
     # get the average loss for each batch/model
-    losses = [(sum([state_loss(state) for state in state_batch])) /
+    losses = [(sum([state_loss(state, frame_cost=0.0001) for state in state_batch])) /
               len(state_batch) for state_batch in states_batches]
     losses = torch.tensor(losses)
 
@@ -228,14 +228,14 @@ signal.signal(signal.SIGINT, signal_handler)
 
 if __name__ == '__main__':
   use_wandb = True
-  states_per_batch = 16
-  batch_size = 256
-  lr = 1e-3
+  states_per_batch = 1
+  batch_size = 1024
+  lr = 2e-3
   standard_dev = 0.01
   random_states = True
-  model_type = TinyCNN2
-  run_name = "TinyCNN2_2"
-  resume_from ="TinyCNN2_1"
+  model_type = TinyCNN3
+  run_name = "TinyCNN3_1"
+  resume_from = None
   device = 'cuda' if torch.cuda.is_available() else 'cpu'
   pool = mp.Pool()
 
@@ -251,6 +251,7 @@ if __name__ == '__main__':
 
   model = model_type().to(device)
   if resume_from is not None:
+    print(f"Resuming from {resume_from}")
     model.load_state_dict(torch.load(os.path.join(resume_from, "model_latest.pt")))
   init_surfaces = None
   best_model_loss, init_surfaces = eval_batched(deepcopy(states), model, device, pool, init_surfaces)
