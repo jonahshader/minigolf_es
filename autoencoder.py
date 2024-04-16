@@ -10,12 +10,9 @@ from env_render import render_state_tensor
 
 
 class BasicCNNEncoder(nn.Module):
-  def __init__(self):
+  def __init__(self, in_channels=3, out_channels=16, latent_dim=200):
     super().__init__()
 
-    in_channels = 3
-    out_channels = 16
-    latent_dim = 200
     act_fn = nn.ReLU()
 
     self.net = nn.Sequential(
@@ -32,20 +29,20 @@ class BasicCNNEncoder(nn.Module):
         act_fn,
         nn.Conv2d(4*out_channels, 4*out_channels, 3, padding=1),
         act_fn,
-        nn.Conv2d(4*out_channels, 8*out_channels,
+        nn.Conv2d(4*out_channels, 4*out_channels,
                   3, padding=1, stride=2),  # 32
         act_fn,
-        nn.Conv2d(8*out_channels, 8*out_channels, 3, padding=1),
+        nn.Conv2d(4*out_channels, 4*out_channels, 3, padding=1),
         act_fn,
-        nn.Conv2d(8*out_channels, 16*out_channels,
+        nn.Conv2d(4*out_channels, 4*out_channels,
                   3, padding=1, stride=2),  # 16
         act_fn,
-        nn.Conv2d(16*out_channels, 16*out_channels, 3, padding=1),
+        nn.Conv2d(4*out_channels, 4*out_channels, 3, padding=1),
         act_fn,
-        nn.Conv2d(16*out_channels, 16*out_channels,
+        nn.Conv2d(4*out_channels, 4*out_channels,
                   3, padding=1, stride=2),  # 8
         nn.Flatten(),
-        nn.Linear(8*8*16*out_channels, latent_dim),
+        nn.Linear(8*8*4*out_channels, latent_dim),
     )
 
   def forward(self, x):
@@ -53,33 +50,29 @@ class BasicCNNEncoder(nn.Module):
 
 
 class BasicCNNDecoder(nn.Module):
-  def __init__(self):
+  def __init__(self, in_channels=3, out_channels=16, latent_dim=200):
     super().__init__()
-
-    latent_dim = 200
-    in_channels = 3
-    out_channels = 16
 
     act_fn = nn.ReLU()
 
     self.net = nn.Sequential(
-        nn.Linear(latent_dim, 16*out_channels*8*8),
-        nn.Unflatten(1, (16*out_channels, 8, 8)),
+        nn.Linear(latent_dim, 4*out_channels*8*8),
+        nn.Unflatten(1, (4*out_channels, 8, 8)),
 
         # (8, 8)
-        nn.ConvTranspose2d(16*out_channels, 16*out_channels, 3, padding=1),
+        nn.ConvTranspose2d(4*out_channels, 4*out_channels, 3, padding=1),
         act_fn,
-        nn.ConvTranspose2d(16*out_channels, 16*out_channels, 3, padding=1,
+        nn.ConvTranspose2d(4*out_channels, 4*out_channels, 3, padding=1,
                            stride=2, output_padding=1),  # (16, 16)
 
-        nn.ConvTranspose2d(16*out_channels, 16*out_channels, 3, padding=1),
+        nn.ConvTranspose2d(4*out_channels, 4*out_channels, 3, padding=1),
         act_fn,
-        nn.ConvTranspose2d(16*out_channels, 8*out_channels, 3, padding=1,
+        nn.ConvTranspose2d(4*out_channels, 4*out_channels, 3, padding=1,
                            stride=2, output_padding=1),  # (32, 32)
 
-        nn.ConvTranspose2d(8*out_channels, 8*out_channels, 3, padding=1),
+        nn.ConvTranspose2d(4*out_channels, 4*out_channels, 3, padding=1),
         act_fn,
-        nn.ConvTranspose2d(8*out_channels, 4*out_channels, 3, padding=1,
+        nn.ConvTranspose2d(4*out_channels, 4*out_channels, 3, padding=1,
                            stride=2, output_padding=1),  # (64, 64)
 
         nn.ConvTranspose2d(4*out_channels, 4*out_channels, 3, padding=1),
@@ -102,10 +95,10 @@ class BasicCNNDecoder(nn.Module):
 
 
 class BasicAutoencoder(nn.Module):
-  def __init__(self):
+  def __init__(self, latent_dim=200):
     super().__init__()
-    self.encoder = BasicCNNEncoder()
-    self.decoder = BasicCNNDecoder()
+    self.encoder = BasicCNNEncoder(latent_dim=latent_dim)
+    self.decoder = BasicCNNDecoder(latent_dim=latent_dim)
 
   def forward(self, x):
     latent = self.encoder(x)
@@ -117,7 +110,7 @@ def render_random_batch(batch_size, state_builder, transform=None):
   return render_state_tensor(states, transform=transform)
 
 
-def train(config):
+def train(config, model):
   device = config['device']
   use_wandb = config['use_wandb']
   batch_size = config['batch_size']
@@ -127,7 +120,7 @@ def train(config):
   run_name = config['run_name']
   state_builder = config['state_builder']
 
-  model = model_type().to(device)
+  model = model.to(device)
 
   criterion = nn.MSELoss()
   optimizer = torch.optim.Adam(model.parameters(), lr=lr)
@@ -182,5 +175,9 @@ def default_config():
 
 if __name__ == '__main__':
   config = default_config()
-  config['run_name'] = 'basic_1'
-  train(config)
+  config['model_type'] = BasicAutoencoder
+  model = config['model_type'](latent_dim=2048)
+  config['iters'] = 500
+
+  config['run_name'] = 'basic_2'
+  train(config, model)
