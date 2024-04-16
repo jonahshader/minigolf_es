@@ -11,7 +11,8 @@ from torchvision.transforms import Normalize
 def render_autoencoder(model, state_builder, transform: Normalize):
   inputs = render_random_batch(1, state_builder, transform)
   with torch.no_grad():
-    outputs = model(inputs)
+    latent = model.encoder(inputs)
+    outputs = model.decoder(latent)
 
   # need to untransform the output
   outputs = outputs.squeeze(0)
@@ -33,7 +34,7 @@ def render_autoencoder(model, state_builder, transform: Normalize):
 
 
 if __name__ == '__main__':
-  run_name = 'basic_2'
+  run_name = 'basic_3_no_linear_longer'
 
   # load the config and model
   with open(os.path.join(run_name, 'config.pkl'), 'rb') as f:

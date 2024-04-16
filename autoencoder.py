@@ -192,7 +192,8 @@ if __name__ == '__main__':
     s['ball_start'] = ball_start
     return s
   
-  config['state_builder'] = build_state
+  # TODO: can't serialize state_builder
+  # https://stackoverflow.com/questions/1253528/is-there-an-easy-way-to-pickle-a-python-function-or-otherwise-serialize-its-cod
 
   config['run_name'] = 'basic_3_no_linear_longer'
   train(config, model)
