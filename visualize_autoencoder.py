@@ -1,12 +1,16 @@
 import os
 import pickle
+import random
 
 from autoencoder import BasicAutoencoder, render_state_tensor, render_random_batch
+from env import make_state, step, act
 
 import pygame
 import torch
 import numpy as np
 from torchvision.transforms import Normalize
+
+from utils import Vec2
 
 def render_autoencoder(model, state_builder, transform: Normalize):
   inputs = render_random_batch(1, state_builder, transform)
@@ -33,6 +37,46 @@ def render_autoencoder(model, state_builder, transform: Normalize):
   return inputs, outputs
 
 
+def test_random(model, state_builder, transform):
+  # create pygame loop. wait for space press to render a new frame
+  pygame.init()
+  screen = pygame.display.set_mode((512, 256), pygame.SCALED | pygame.RESIZABLE)
+  clock = pygame.time.Clock()
+  running = True
+  while running:
+    for event in pygame.event.get():
+      if event.type == pygame.QUIT:
+        running = False
+      if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+        inputs, outputs = render_autoencoder(model, state_builder, transform)
+        screen.blit(inputs, (0, 0))
+        screen.blit(outputs, (256, 0))
+        pygame.display.flip()
+        clock.tick(60)
+
+def test_play(model, state_builder, transform):
+  # create pygame loop. wait for space press to render a new frame
+  pygame.init()
+  screen = pygame.display.set_mode((512, 256), pygame.SCALED | pygame.RESIZABLE)
+  clock = pygame.time.Clock()
+  state = state_builder()
+  running = True
+  while running:
+    for event in pygame.event.get():
+      if event.type == pygame.QUIT:
+        running = False
+      if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+        state = state_builder()
+
+    if step(state, 1/60):
+      act(state, Vec2(random.random() * 2 - 1, random.random() * 2 - 1))
+    inputs, outputs = render_autoencoder(model, lambda: state, transform)
+    screen.blit(inputs, (0, 0))
+    screen.blit(outputs, (256, 0))
+    pygame.display.flip()
+    clock.tick(60)
+
+
 if __name__ == '__main__':
   run_name = 'basic_3_no_linear_longer'
 
@@ -52,19 +96,5 @@ if __name__ == '__main__':
   with open(os.path.join(run_name, 'transform.pkl'), 'rb') as f:
     transform = pickle.load(f)
 
-  # create pygame loop. wait for space press to render a new frame
-  pygame.init()
-  screen = pygame.display.set_mode((512, 256), pygame.SCALED | pygame.RESIZABLE)
-  clock = pygame.time.Clock()
-  running = True
-  while running:
-    for event in pygame.event.get():
-      if event.type == pygame.QUIT:
-        running = False
-      if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-        inputs, outputs = render_autoencoder(model, state_builder, transform)
-        screen.blit(inputs, (0, 0))
-        screen.blit(outputs, (256, 0))
-        pygame.display.flip()
-        clock.tick(60)
+  test_play(model, state_builder, transform)
 
