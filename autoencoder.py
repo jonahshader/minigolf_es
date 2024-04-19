@@ -73,6 +73,8 @@ def train(config, model):
   with open(os.path.join(run_name, 'transform.pkl'), 'wb') as f:
     pickle.dump(transform, f)
   # also save the config
+  # remove the state_builder since it's not serializable
+  config.pop('state_builder')
   with open(os.path.join(run_name, 'config.pkl'), 'wb') as f:
     pickle.dump(config, f)
 
