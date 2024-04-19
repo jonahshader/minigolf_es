@@ -33,7 +33,8 @@ def train(config, model):
   state_builder = config['state_builder']
 
   model = model.to(device)
-  model = torch.compile(model)
+  # TODO: figure out how to serialize when using torch.compile
+  compiled_model = torch.compile(model, mode="reduce-overhead")
 
   criterion = nn.MSELoss()
   optimizer = torch.optim.Adam(model.parameters(), lr=lr)
@@ -52,7 +53,7 @@ def train(config, model):
 
   for i in range(iters):
     inputs = render_random_batch(batch_size, state_builder, transform=transform, use_policy_render=use_policy_render).to(device)
-    outputs = model(inputs)
+    outputs = compiled_model(inputs)
 
 
     loss = criterion(outputs, inputs)
@@ -107,13 +108,13 @@ if __name__ == '__main__':
   config['constructor_args'] = constructor_args
   model = config['model_type'](**constructor_args)
 
-  # temp: load pretrained model
-  model.load_state_dict(torch.load('policy_autoencoder_smaller_1/model_final.pt'))
+  # # temp: load pretrained model
+  # model.load_state_dict(torch.load('policy_autoencoder_smaller_1/model_final.pt'))
 
 
-  config['iters'] = 2000
+  config['iters'] = 3000
   # config['lr'] = 5e-4
   config['batch_size'] = 128 
   config['state_builder'] = build_state
-  config['run_name'] = 'policy_autoencoder_smaller_1_resume'
+  config['run_name'] = 'policy_autoencoder_smaller_2'
   train(config, model)
