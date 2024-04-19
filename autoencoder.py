@@ -6,116 +6,25 @@ import random
 import torch
 import torch.nn as nn
 
-from compute_transform import create_transform
+from autoencoder_model import BasicAutoencoder, PolicyAutoencoder
+from compute_transform import create_transform, create_transform_for_policy
 from env import make_state
-from env_render import render_state_tensor
+from env_render import render_state_tensor, render_state_tensor_for_policy
 from utils import Ball, Vec2
 
 
-class BasicCNNEncoder(nn.Module):
-  def __init__(self, in_channels=3, out_channels=16, latent_dim=200):
-    super().__init__()
 
-    act_fn = nn.ReLU()
-
-    self.net = nn.Sequential(
-        nn.Conv2d(in_channels, out_channels, 3, padding=1),  # 256
-        act_fn,
-        nn.Conv2d(out_channels, out_channels, 3, padding=1),
-        act_fn,
-        nn.Conv2d(out_channels, 2*out_channels, 3, padding=1, stride=2),  # 128
-        act_fn,
-        nn.Conv2d(2*out_channels, 2*out_channels, 3, padding=1),
-        act_fn,
-        nn.Conv2d(2*out_channels, 4*out_channels,
-                  3, padding=1, stride=2),  # 64
-        act_fn,
-        nn.Conv2d(4*out_channels, 4*out_channels, 3, padding=1),
-        act_fn,
-        nn.Conv2d(4*out_channels, 4*out_channels,
-                  3, padding=1, stride=2),  # 32
-        act_fn,
-        nn.Conv2d(4*out_channels, 4*out_channels, 3, padding=1),
-        act_fn,
-        nn.Conv2d(4*out_channels, 4*out_channels,
-                  3, padding=1, stride=2),  # 16
-        act_fn,
-        nn.Conv2d(4*out_channels, 4*out_channels, 3, padding=1),
-        act_fn,
-        nn.Conv2d(4*out_channels, 4*out_channels,
-                  3, padding=1, stride=2),  # 8
-        nn.Flatten(),
-        nn.Linear(8*8*4*out_channels, latent_dim) if latent_dim is not None else nn.Identity(),
-    )
-
-  def forward(self, x):
-    return self.net(x)
-
-
-class BasicCNNDecoder(nn.Module):
-  def __init__(self, in_channels=3, out_channels=16, latent_dim=200):
-    super().__init__()
-
-    act_fn = nn.ReLU()
-
-    self.net = nn.Sequential(
-        nn.Linear(latent_dim, 4*out_channels*8*8) if latent_dim is not None else nn.Identity(),
-        nn.Unflatten(1, (4*out_channels, 8, 8)),
-
-        # (8, 8)
-        nn.ConvTranspose2d(4*out_channels, 4*out_channels, 3, padding=1),
-        act_fn,
-        nn.ConvTranspose2d(4*out_channels, 4*out_channels, 3, padding=1,
-                           stride=2, output_padding=1),  # (16, 16)
-
-        nn.ConvTranspose2d(4*out_channels, 4*out_channels, 3, padding=1),
-        act_fn,
-        nn.ConvTranspose2d(4*out_channels, 4*out_channels, 3, padding=1,
-                           stride=2, output_padding=1),  # (32, 32)
-
-        nn.ConvTranspose2d(4*out_channels, 4*out_channels, 3, padding=1),
-        act_fn,
-        nn.ConvTranspose2d(4*out_channels, 4*out_channels, 3, padding=1,
-                           stride=2, output_padding=1),  # (64, 64)
-
-        nn.ConvTranspose2d(4*out_channels, 4*out_channels, 3, padding=1),
-        act_fn,
-        nn.ConvTranspose2d(4*out_channels, 2*out_channels, 3, padding=1,
-                           stride=2, output_padding=1),  # (128, 128)
-        act_fn,
-        nn.ConvTranspose2d(2*out_channels, 2*out_channels, 3, padding=1),
-        act_fn,
-        nn.ConvTranspose2d(2*out_channels, out_channels, 3, padding=1,
-                           stride=2, output_padding=1),  # (256, 256)
-        act_fn,
-        nn.ConvTranspose2d(out_channels, out_channels, 3, padding=1),
-        act_fn,
-        nn.ConvTranspose2d(out_channels, in_channels, 3, padding=1)
-    )
-
-  def forward(self, x):
-    return self.net(x)
-
-
-class BasicAutoencoder(nn.Module):
-  def __init__(self, latent_dim=200):
-    super().__init__()
-    self.encoder = BasicCNNEncoder(latent_dim=latent_dim)
-    self.decoder = BasicCNNDecoder(latent_dim=latent_dim)
-
-  def forward(self, x):
-    latent = self.encoder(x)
-    return self.decoder(latent)
-
-
-def render_random_batch(batch_size, state_builder, transform=None):
+def render_random_batch(batch_size, state_builder, transform=None, use_policy_render=False):
   states = [state_builder() for _ in range(batch_size)]
+  if use_policy_render:
+    return render_state_tensor_for_policy(states, transform=transform)
   return render_state_tensor(states, transform=transform)
 
 
 def train(config, model):
   device = config['device']
   use_wandb = config['use_wandb']
+  use_policy_render = config['use_policy_render']
   batch_size = config['batch_size']
   iters = config['iters']
   model_type = config['model_type']
@@ -127,7 +36,10 @@ def train(config, model):
 
   criterion = nn.MSELoss()
   optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-  transform = create_transform()
+  if use_policy_render:
+    transform = create_transform_for_policy()
+  else:
+    transform = create_transform()
 
   if use_wandb:
     import wandb
@@ -138,10 +50,16 @@ def train(config, model):
     wandb.init(project='minigolf_es_autoencoder', config=config, name=run_name)
 
   for i in range(iters):
-    inputs = render_random_batch(batch_size, state_builder, transform).to(device)
+    inputs = render_random_batch(batch_size, state_builder, transform=transform, use_policy_render=use_policy_render).to(device)
+
+    if use_policy_render:
+      # policy render only need first two color channels, so remove the third
+      inputs = inputs[:, :2]
+    
     outputs = model(inputs)
 
-    loss = criterion(outputs, inputs)
+
+    loss = criterion(outputs)
     optimizer.zero_grad()
     loss.backward()
     optimizer.step()
@@ -167,6 +85,7 @@ def default_config():
   return {
     'device': torch.device('cuda' if torch.cuda.is_available() else 'cpu'),
     'use_wandb': True,
+    'use_policy_render': False,
     'batch_size': 64,
     'iters': 1000,
     'model_type': BasicAutoencoder,
@@ -175,25 +94,21 @@ def default_config():
     'state_builder': make_state,
   }
 
+def build_state():
+  s = make_state()
+  ball_start = Vec2(random.random(), random.random()) * 256
+  s['ball'] = Ball(ball_start)
+  s['ball_start'] = ball_start
+  return s
 
 if __name__ == '__main__':
   config = default_config()
-  config['model_type'] = BasicAutoencoder
-  constructor_args = {'latent_dim': None}
+  config['model_type'] = PolicyAutoencoder
+  constructor_args = {'out_chanels': 8}
   config['constructor_args'] = constructor_args
   model = config['model_type'](**constructor_args)
   config['iters'] = 2000
-  config['batch_size'] = 128
-
-  def build_state():
-    s = make_state()
-    ball_start = Vec2(random.random(), random.random()) * 256
-    s['ball'] = Ball(ball_start)
-    s['ball_start'] = ball_start
-    return s
-  
-  # TODO: can't serialize state_builder
-  # https://stackoverflow.com/questions/1253528/is-there-an-easy-way-to-pickle-a-python-function-or-otherwise-serialize-its-cod
-
-  config['run_name'] = 'basic_3_no_linear_longer'
+  config['batch_size'] = 128 
+  config['state_builder'] = build_state
+  config['run_name'] = 'policy_autoencoder_small_1'
   train(config, model)
