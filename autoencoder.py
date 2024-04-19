@@ -33,6 +33,7 @@ def train(config, model):
   state_builder = config['state_builder']
 
   model = model.to(device)
+  model = torch.compile(model)
 
   criterion = nn.MSELoss()
   optimizer = torch.optim.Adam(model.parameters(), lr=lr)
@@ -51,15 +52,10 @@ def train(config, model):
 
   for i in range(iters):
     inputs = render_random_batch(batch_size, state_builder, transform=transform, use_policy_render=use_policy_render).to(device)
-
-    if use_policy_render:
-      # policy render only need first two color channels, so remove the third
-      inputs = inputs[:, :2]
-    
     outputs = model(inputs)
 
 
-    loss = criterion(outputs)
+    loss = criterion(outputs, inputs)
     optimizer.zero_grad()
     loss.backward()
     optimizer.step()
@@ -104,11 +100,18 @@ def build_state():
 if __name__ == '__main__':
   config = default_config()
   config['model_type'] = PolicyAutoencoder
-  constructor_args = {'out_chanels': 8}
+  config['use_policy_render'] = True
+  constructor_args = {'out_channels': 12}
   config['constructor_args'] = constructor_args
   model = config['model_type'](**constructor_args)
+
+  # # temp: load pretrained model
+  # model.load_state_dict(torch.load('policy_autoencoder_small_2/model_final.pt'))
+
+
   config['iters'] = 2000
-  config['batch_size'] = 128 
+  # config['lr'] = 5e-4
+  config['batch_size'] = 96 
   config['state_builder'] = build_state
-  config['run_name'] = 'policy_autoencoder_small_1'
+  config['run_name'] = 'policy_autoencoder_medium_1'
   train(config, model)

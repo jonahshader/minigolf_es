@@ -32,3 +32,7 @@ model_1980.pt
 /basic_2
 /basic_3_no_linear
 /basic_3_no_linear_longer
+/policy_autoencoder_small_1
+/policy_autoencoder_small_2
+/policy_autoencoder_small_2_resume
+/policy_autoencoder_medium_1

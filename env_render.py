@@ -88,6 +88,9 @@ def render_state_tensor_for_policy(states, transform=None):
     render_state_for_policy(state, wall_surface, None, hole_surface)
     wall_np = np.ascontiguousarray(pygame.surfarray.pixels3d(wall_surface))
     hole_np = np.ascontiguousarray(pygame.surfarray.pixels3d(hole_surface))
+    # drop the third channel (ball)
+    wall_np = wall_np[:, :, :2]
+    hole_np = hole_np[:, :, :2]
 
     np_surface = wall_np + hole_np
     surface_rgb = torch.from_numpy(np_surface).float()
