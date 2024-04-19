@@ -6,7 +6,7 @@ import random
 import torch
 import torch.nn as nn
 
-from autoencoder_model import BasicAutoencoder, PolicyAutoencoder
+from autoencoder_model import BasicAutoencoder, PolicyAutoencoder, SmallerPolicyAutoencoder
 from compute_transform import create_transform, create_transform_for_policy
 from env import make_state
 from env_render import render_state_tensor, render_state_tensor_for_policy
@@ -101,19 +101,19 @@ def build_state():
 
 if __name__ == '__main__':
   config = default_config()
-  config['model_type'] = PolicyAutoencoder
+  config['model_type'] = SmallerPolicyAutoencoder
   config['use_policy_render'] = True
-  constructor_args = {'out_channels': 12}
+  constructor_args = {'out_channels': 16, 'final_channel_factor': 4}
   config['constructor_args'] = constructor_args
   model = config['model_type'](**constructor_args)
 
-  # # temp: load pretrained model
-  # model.load_state_dict(torch.load('policy_autoencoder_small_2/model_final.pt'))
+  # temp: load pretrained model
+  model.load_state_dict(torch.load('policy_autoencoder_smaller_1/model_final.pt'))
 
 
   config['iters'] = 2000
   # config['lr'] = 5e-4
-  config['batch_size'] = 96 
+  config['batch_size'] = 128 
   config['state_builder'] = build_state
-  config['run_name'] = 'policy_autoencoder_medium_1'
+  config['run_name'] = 'policy_autoencoder_smaller_1_resume'
   train(config, model)

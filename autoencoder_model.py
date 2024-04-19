@@ -12,7 +12,7 @@ from env_render import render_state_tensor, render_state_tensor_for_policy
 from utils import Ball, Vec2
 
 class PolicyEncoder(nn.Module):
-  def __init__(self, out_channels=16):
+  def __init__(self, out_channels=16, final_channel_factor=1):
     super().__init__()
 
     act_fn = nn.ReLU()
@@ -41,7 +41,7 @@ class PolicyEncoder(nn.Module):
       act_fn,
       nn.Conv2d(4*out_channels, 4*out_channels, 3, padding=1),
       act_fn,
-      nn.Conv2d(4*out_channels, out_channels,
+      nn.Conv2d(4*out_channels, final_channel_factor*out_channels,
                 3, padding=1, stride=2)  # 8
     )
 
@@ -49,14 +49,14 @@ class PolicyEncoder(nn.Module):
     return self.net(x)
   
 class PolicyDecoder(nn.Module):
-  def __init__(self, out_channels=16):
+  def __init__(self, out_channels=16, final_channel_factor=1):
     super().__init__()
 
     act_fn = nn.ReLU()
 
     self.net = nn.Sequential(
       # 8
-      nn.ConvTranspose2d(out_channels, 4*out_channels, 3, padding=1),
+      nn.ConvTranspose2d(final_channel_factor*out_channels, 4*out_channels, 3, padding=1),
       act_fn,
       nn.ConvTranspose2d(4*out_channels, 4*out_channels, 3, padding=1,
                          stride=2, output_padding=1),  # 16
@@ -84,6 +84,45 @@ class PolicyDecoder(nn.Module):
       nn.ConvTranspose2d(4*out_channels, 4*out_channels, 3, padding=1),  # 256
       act_fn,
       nn.ConvTranspose2d(4*out_channels, 2, 3, padding=1),  # 256
+    )
+
+  def forward(self, x):
+    return self.net(x)
+  
+
+class SmallerPolicyEncoder(nn.Module):
+  def __init__(self, out_channels=16, final_channel_factor=1):
+    super().__init__()
+    act_fn = nn.ReLU()
+    self.net = nn.Sequential(
+      nn.Conv2d(2, out_channels, 3, padding=1, stride=2),  # 128
+      act_fn,
+      nn.Conv2d(out_channels, 2*out_channels, 3, padding=1, stride=2),  # 64
+      act_fn,
+      nn.Conv2d(2*out_channels, 4*out_channels, 3, padding=1, stride=2),  # 32
+      act_fn,
+      nn.Conv2d(4*out_channels, 4*out_channels, 3, padding=1, stride=2),  # 16
+      act_fn,
+      nn.Conv2d(4*out_channels, final_channel_factor*out_channels, 3, padding=1, stride=2)  # 8
+    )
+
+  def forward(self, x):
+    return self.net(x)
+  
+class SmallerPolicyDecoder(nn.Module):
+  def __init__(self, out_channels=16, final_channel_factor=1):
+    super().__init__()
+    act_fn = nn.ReLU()
+    self.net = nn.Sequential(
+      nn.ConvTranspose2d(final_channel_factor*out_channels, 4*out_channels, 3, padding=1, stride=2, output_padding=1),  # 16
+      act_fn,
+      nn.ConvTranspose2d(4*out_channels, 4*out_channels, 3, padding=1, stride=2, output_padding=1),  # 32
+      act_fn,
+      nn.ConvTranspose2d(4*out_channels, 4*out_channels, 3, padding=1, stride=2, output_padding=1),  # 64
+      act_fn,
+      nn.ConvTranspose2d(4*out_channels, 4*out_channels, 3, padding=1, stride=2, output_padding=1),  # 128
+      act_fn,
+      nn.ConvTranspose2d(4*out_channels, 2, 3, padding=1, stride=2, output_padding=1),  # 256
     )
 
   def forward(self, x):
@@ -175,10 +214,20 @@ class BasicCNNDecoder(nn.Module):
     return self.net(x)
   
 class PolicyAutoencoder(nn.Module):
-  def __init__(self, out_channels=16):
+  def __init__(self, out_channels=16, final_channel_factor=1):
     super().__init__()
-    self.encoder = PolicyEncoder(out_channels=out_channels)
-    self.decoder = PolicyDecoder(out_channels=out_channels)
+    self.encoder = PolicyEncoder(out_channels=out_channels, final_channel_factor=final_channel_factor)
+    self.decoder = PolicyDecoder(out_channels=out_channels, final_channel_factor=final_channel_factor)
+
+  def forward(self, x):
+    latent = self.encoder(x)
+    return self.decoder(latent)
+  
+class SmallerPolicyAutoencoder(nn.Module):
+  def __init__(self, out_channels=16, final_channel_factor=1):
+    super().__init__()
+    self.encoder = SmallerPolicyEncoder(out_channels=out_channels, final_channel_factor=final_channel_factor)
+    self.decoder = SmallerPolicyDecoder(out_channels=out_channels, final_channel_factor=final_channel_factor)
 
   def forward(self, x):
     latent = self.encoder(x)
