@@ -2,6 +2,7 @@ import numpy as np
 import pygame
 import torch
 from env import make_state
+from utils import Vec2
 
 
 def render_state(state, surface=None, extras=False):
@@ -33,6 +34,33 @@ def render_state(state, surface=None, extras=False):
   return surface
 
 
+def render_state_for_policy(state, surface=None):
+  pygame.init()
+
+  ball = state['ball']
+  hole = state['hole']
+  walls = state['walls']
+  size = state['size']
+
+  offset = ball.pos - Vec2(size // 2, size // 2)
+
+  if surface is None:
+    surface = pygame.Surface((size, size))
+
+  # clear surface with black
+  surface.fill((0, 0, 0))
+
+  scale = 0.5
+
+  # render game state
+  hole.render_for_policy(surface, offset, size, scale)
+  for wall in walls:
+    wall.render_for_policy(surface, offset, size, scale)
+
+  ball.render_for_policy(surface, offset, size, scale)
+
+  return surface
+
 def render_state_tensor(states, transform=None):
   surface = None
   tensors = []
@@ -54,7 +82,7 @@ if __name__ == '__main__':
 
   state = make_state()
   screen = pygame.display.set_mode(
-      (state['size'], state['size']), pygame.SCALED | pygame.RESIZABLE)
+      (state['size'] * 2, state['size']), pygame.SCALED | pygame.RESIZABLE)
 
   clock = pygame.time.Clock()
 
@@ -70,6 +98,8 @@ if __name__ == '__main__':
           state = make_state()
 
     surface = render_state(state, screen)
+    policy_surface = render_state_for_policy(state)
+    screen.blit(policy_surface, (state['size'], 0))
     pygame.display.flip()
     clock.tick(60)
 
