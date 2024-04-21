@@ -5,8 +5,10 @@ import random
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 from autoencoder_model import BasicAutoencoder, PolicyAutoencoder, SmallerPolicyAutoencoder
+from autoencoder_res_model import ResAutoencoder
 from compute_transform import create_transform, create_transform_for_policy
 from env import make_state
 from env_render import render_state_tensor, render_state_tensor_for_policy
@@ -51,6 +53,12 @@ def train(config, model):
     wandb_config.pop('state_builder')
     wandb.init(project='minigolf_es_autoencoder', config=config, name=run_name)
 
+  os.makedirs(run_name, exist_ok=True)
+  # automatically add the run directory to .gitignore
+  with open(".gitignore", "a") as f:
+    f.write(f"\n/{run_name}")
+
+  # training loop
   for i in range(iters):
     inputs = render_random_batch(batch_size, state_builder, transform=transform, use_policy_render=use_policy_render).to(device)
     outputs = compiled_model(inputs)
@@ -65,11 +73,11 @@ def train(config, model):
       print(f'Iter {i}, Loss: {loss.item()}')
       if use_wandb:
         wandb.log({'loss': loss.item(), 'iter': i})
+    if i % 50 == 0:
+      # save the model
+      torch.save(model.state_dict(), os.path.join(run_name, f'model_latest.pt'))
 
-  os.makedirs(run_name, exist_ok=True)
-  # automatically add the run directory to .gitignore
-  with open(".gitignore", "a") as f:
-    f.write(f"\n/{run_name}")
+  # save the final model
   torch.save(model.state_dict(), os.path.join(run_name, 'model_final.pt'))
   with open(os.path.join(run_name, 'transform.pkl'), 'wb') as f:
     pickle.dump(transform, f)
@@ -102,19 +110,20 @@ def build_state():
 
 if __name__ == '__main__':
   config = default_config()
-  config['model_type'] = SmallerPolicyAutoencoder
+  config['model_type'] = ResAutoencoder
   config['use_policy_render'] = True
-  constructor_args = {'out_channels': 16, 'final_channel_factor': 4}
+  block_pattern = [False, False, True] * 4
+  constructor_args = {'channels': 2, 'block_pattern': block_pattern}
   config['constructor_args'] = constructor_args
   model = config['model_type'](**constructor_args)
 
   # # temp: load pretrained model
   # model.load_state_dict(torch.load('policy_autoencoder_smaller_1/model_final.pt'))
-
+  # config['use_wandb'] = False
 
   config['iters'] = 3000
   # config['lr'] = 5e-4
-  config['batch_size'] = 128 
+  config['batch_size'] = 64 
   config['state_builder'] = build_state
-  config['run_name'] = 'policy_autoencoder_smaller_2'
+  config['run_name'] = 'resnet_1'
   train(config, model)

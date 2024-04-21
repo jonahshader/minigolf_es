@@ -17,10 +17,10 @@ class BasicBlock(nn.Module):
     scale = 2 if scaling else 1
 
     self.bn1 = nn.BatchNorm2d(channels)
-    self.bn2 = nn.BatchNorm2d(channels / scale if transpose else channels * scale)
+    self.bn2 = nn.BatchNorm2d(channels // scale if transpose else channels * scale)
     if transpose:
-      out_channels = channels / scale
-      self.conv1 = nn.ConvTranspose2d(channels, out_channels, 3, stride=scale, padding=1, output_padding=1 if scaling else 0)
+      out_channels = channels // scale
+      self.conv1 = nn.ConvTranspose2d(channels, out_channels, 3, stride=scale, padding=1, output_padding=(1 if scaling else 0))
       self.conv2 = nn.ConvTranspose2d(out_channels, out_channels, 3, stride=1, padding=1)
     else:
       out_channels = channels * scale
@@ -71,7 +71,7 @@ class ResAutoencoder(nn.Module):
     for scaling in reversed(block_pattern):
       decoder_blocks.append(BasicBlock(current_channels, act, transpose=True, scaling=scaling))
       if scaling:
-        current_channels /= 2
+        current_channels //= 2
 
     self.encoder = nn.Sequential(*encoder_blocks)
     self.decoder = nn.Sequential(*decoder_blocks)
