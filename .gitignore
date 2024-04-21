@@ -41,3 +41,6 @@ model_1980.pt
 /policy_autoencoder_smaller_2
 /resnet_1
 /resnet_full_1
+/resnet_full_2
+/resnet_deeper_1
+/resnet_gelu_1

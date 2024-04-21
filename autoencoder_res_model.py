@@ -34,6 +34,12 @@ class BasicBlock(nn.Module):
       else:
         self.downscale = nn.AvgPool2d(2, stride=2)
 
+    # if scaling:
+    #   if transpose:
+    #     self.projection = nn.ConvTranspose2d(channels, out_channels, 2, stride=2, output_padding=1)
+    #   else:
+    #     self.projection = nn.Conv2d(channels, out_channels, 1)
+
   def forward(self, x):
     x_next = self.bn1(x)
     x_next = self.act(x_next)
@@ -53,6 +59,11 @@ class BasicBlock(nn.Module):
         x_res = self.projection(x_res)
     else:
       x_res = x
+
+    # if self.scaling:
+    #   x_res = self.projection(x)
+    # else:
+    #   x_res = x
 
     return x_next + x_res
   

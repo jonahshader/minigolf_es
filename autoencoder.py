@@ -112,8 +112,8 @@ if __name__ == '__main__':
   config = default_config()
   config['model_type'] = ResAutoencoder
   config['use_policy_render'] = True
-  block_pattern = [False, False, True] * 8
-  constructor_args = {'channels': 2, 'block_pattern': block_pattern}
+  block_pattern = [False, True] * 4
+  constructor_args = {'channels': 2, 'block_pattern': block_pattern, 'act': F.gelu}
   config['constructor_args'] = constructor_args
   model = config['model_type'](**constructor_args)
 
@@ -123,7 +123,7 @@ if __name__ == '__main__':
 
   config['iters'] = 3000
   # config['lr'] = 5e-4
-  config['batch_size'] = 64 
+  config['batch_size'] = 128 
   config['state_builder'] = build_state
-  config['run_name'] = 'resnet_full_1'
+  config['run_name'] = 'resnet_gelu_1'
   train(config, model)
