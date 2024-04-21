@@ -112,7 +112,7 @@ if __name__ == '__main__':
   config = default_config()
   config['model_type'] = ResAutoencoder
   config['use_policy_render'] = True
-  block_pattern = [False, False, True] * 4
+  block_pattern = [False, False, True] * 8
   constructor_args = {'channels': 2, 'block_pattern': block_pattern}
   config['constructor_args'] = constructor_args
   model = config['model_type'](**constructor_args)
@@ -125,5 +125,5 @@ if __name__ == '__main__':
   # config['lr'] = 5e-4
   config['batch_size'] = 64 
   config['state_builder'] = build_state
-  config['run_name'] = 'resnet_1'
+  config['run_name'] = 'resnet_full_1'
   train(config, model)
