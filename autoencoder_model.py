@@ -1,15 +1,6 @@
-import os
-import pickle
-from copy import deepcopy
-import random
 
-import torch
 import torch.nn as nn
 
-from compute_transform import create_transform, create_transform_for_policy
-from env import make_state
-from env_render import render_state_tensor, render_state_tensor_for_policy
-from utils import Ball, Vec2
 
 class PolicyEncoder(nn.Module):
   def __init__(self, out_channels=16, final_channel_factor=1):
