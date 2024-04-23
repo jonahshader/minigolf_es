@@ -123,7 +123,7 @@ if __name__ == '__main__':
 
   config['iters'] = 3000
   # config['lr'] = 5e-4
-  config['batch_size'] = 128 
+  config['batch_size'] = 128
   config['state_builder'] = build_state
   config['run_name'] = 'resnet_gelu_1'
   train(config, model)

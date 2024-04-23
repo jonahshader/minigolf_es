@@ -1,6 +1,9 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import math
+
+from autoencoder_res_model import BasicBlock
 
 
 class BasicCNN(nn.Module):
@@ -228,3 +231,29 @@ class TinyCNN3(nn.Module):
     # tanh to force the output to be in the range [-1, 1]
     # reshape to (batch_size, 2)
     return F.tanh(x.view(x.size(0), 2))
+  
+
+class ResModel1(nn.Module):
+  def __init__(self, in_channels=32, in_width=16, projection_channels=4, levels=3):
+    super().__init__()
+    current_channels = projection_channels
+    current_width = in_width
+    layers = []
+    # TODO: maybe try breaking the projection into multiple layers
+    layers.append(nn.Conv2d(in_channels, projection_channels, 1))
+    
+    for _ in range(levels):
+      layers.append(BasicBlock(current_channels, F.relu, scaling=True))
+      current_channels *= 2
+      current_width //= 2
+
+    layers.append(nn.Conv2d(current_channels, 2, current_width))
+    layers.append(nn.Flatten())
+    layers.append(nn.Tanh())
+    self.model = nn.Sequential(*layers)
+
+  def forward(self, x):
+    return self.model(x)
+
+
+    

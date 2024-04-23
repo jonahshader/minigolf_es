@@ -106,7 +106,8 @@ def render_state_tensor_for_policy(states, transform=None):
 if __name__ == '__main__':
   print('Testing state rendering...')
 
-  state = make_state()
+  state_builder = make_state
+  state = state_builder()
   screen = pygame.display.set_mode(
       (state['size'] * 2, state['size']), pygame.SCALED | pygame.RESIZABLE)
   
@@ -125,7 +126,7 @@ if __name__ == '__main__':
         if event.key == pygame.K_ESCAPE:
           running = False
         elif event.key == pygame.K_SPACE:
-          state = make_state()
+          state = state_builder()
 
     surface = render_state(state, screen)
     render_state_for_policy(state, wall_surface, ball_surface, hole_surface)
