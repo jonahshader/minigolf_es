@@ -125,31 +125,30 @@ class Rect:
 
 class CourseSurface:
     # Define grass and sand colors
-    light_green = (122, 194, 111)
-    dark_green = (86, 157, 77)
-    sand_dark = (230, 220, 130)
-    sand_light = (245, 240, 145)
+  light_green = (122, 194, 111)
+  dark_green = (86, 157, 77)
+  sand_dark = (230, 220, 130)
+  sand_light = (245, 240, 145)
 
+  def __init__(self, rect, friction=120, light_color=sand_light, dark_color=sand_dark):
+    self.rect = rect
+    self.friction = friction
+    self.light_color = light_color
+    self.dark_color = dark_color
 
-    def __init__(self, rect, friction=120, light_color=sand_light, dark_color=sand_dark):
-        self.rect = rect
-        self.friction = friction
-        self.light_color = light_color
-        self.dark_color = dark_color
-        
-        self.texture = []
-        if light_color != dark_color:
-          for y in range(int(self.rect.pos.y), int(self.rect.pos.y + self.rect.size.y), 2):
-            for x in range(int(self.rect.pos.x), int(self.rect.pos.x + self.rect.size.x), 2):
-              if random.random() > 0.5:
-                self.texture.append((x, y))
+    self.texture = []
+    if light_color != dark_color:
+      for y in range(int(self.rect.pos.y), int(self.rect.pos.y + self.rect.size.y), 2):
+        for x in range(int(self.rect.pos.x), int(self.rect.pos.x + self.rect.size.x), 2):
+          if random.random() > 0.5:
+            self.texture.append((x, y))
 
-    def render(self, surface):
-        # Draw the course surface texture
-        pygame.draw.rect(surface, self.light_color, (self.rect.pos.x, self.rect.pos.y, self.rect.size.x, self.rect.size.y))
-        for x, y in self.texture:
-          pygame.draw.rect(surface, self.dark_color, (x, y, 2, 2))
-
+  def render(self, surface):
+    # Draw the course surface texture
+    pygame.draw.rect(surface, self.light_color, (self.rect.pos.x,
+                     self.rect.pos.y, self.rect.size.x, self.rect.size.y))
+    for x, y in self.texture:
+      pygame.draw.rect(surface, self.dark_color, (x, y, 2, 2))
 
 
 class Ball:

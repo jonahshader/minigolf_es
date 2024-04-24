@@ -4,6 +4,7 @@ from env import make_state, save_state
 from env_render import render_state
 from utils import Vec2, Wall, Line, Ball, Hole
 
+
 class Tool(Enum):
   WALL = 0
   BALL = 1
@@ -58,7 +59,6 @@ if __name__ == '__main__':
         elif current_tool == Tool.HOLE:
           state['hole'] = Hole(Vec2(x, y))
 
-        
       elif event.type == pygame.MOUSEBUTTONUP:
         mouse_pressed = False
 
