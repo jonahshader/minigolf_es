@@ -1,5 +1,5 @@
 from math import sqrt
-from utils import Vec2, Line, Rect, Wall, Ball, Hole
+from utils import Vec2, Line, Rect, Wall, Ball, Hole, CourseSurface
 import random
 import json
 from pprint import pprint
@@ -35,7 +35,18 @@ def make_walls(ball_start, hole_start, size, wall_subsections, wall_chance, wall
   return walls
 
 
-def make_state(size=256, max_strokes=4, wall_subsections=5, wall_chance=0.5, wall_overlap=0.5):
+def make_surfaces(size, min_surface_size, max_surface_size, num_surfaces):
+  surfaces = []
+  for _ in range(num_surfaces):
+    surface_size = Vec2(random.random() * (max_surface_size - min_surface_size) + min_surface_size,
+                        random.random() * (max_surface_size - min_surface_size) + min_surface_size)
+    surface_pos = Vec2(random.random() * (size - surface_size.x),
+                        random.random() * (size - surface_size.y))
+    surface = CourseSurface(Rect(surface_pos, surface_size))
+    surfaces.append(surface)
+  return surfaces
+
+def make_state(size=256, max_strokes=4, wall_subsections=5, wall_chance=0.5, wall_overlap=0.5, min_surface_size=32, max_surface_size=64, num_surfaces=5):
   # ball_start = Vec2(random.random() * 0.125 + 0.125, random.random() * 0.125 + 0.125) * size
   # hole_start = Vec2(size, size) - ball_start
   ball_start = Vec2(random.random() * 0.8 + 0.1, random.random() * 0.8 + 0.1) * size
@@ -43,6 +54,8 @@ def make_state(size=256, max_strokes=4, wall_subsections=5, wall_chance=0.5, wal
 
   walls = make_walls(ball_start, hole_start, size,
                      wall_subsections, wall_chance, wall_overlap)
+  
+  surfaces = make_surfaces(size, min_surface_size, max_surface_size, num_surfaces)
   
   # add walls around the edge, inset
   inset = 3
@@ -55,6 +68,7 @@ def make_state(size=256, max_strokes=4, wall_subsections=5, wall_chance=0.5, wal
       "ball": Ball(ball_start),
       "hole": Hole(hole_start),
       "walls": walls,
+      "surfaces": surfaces,
       "strokes": 0,
       "size": size,
       "max_strokes": max_strokes
