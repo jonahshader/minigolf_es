@@ -238,7 +238,7 @@ if __name__ == '__main__':
   model = BasicCNN().to(device)
   # model = ConstModel().to(device)
 
-  use_wandb = True
+  use_wandb = False
 
   states = [make_state(max_strokes=1) for _ in range(states_per_batch)]
   # sanity check: remove all walls from the states
