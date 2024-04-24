@@ -11,6 +11,7 @@ from compute_transform import create_transform
 
 from env_render import render_state_tensor, render_state_tensor_for_policy, render_state
 
+
 def run(model, transform, make_state_func=make_state, autoenc_model=None, use_policy_render=False):
   print('Testing cnn policy...')
 
@@ -86,7 +87,8 @@ if __name__ == '__main__':
     autoenc_model_type = autoenc_config['model_type']
     autoenc_constructor_args = autoenc_config['constructor_args']
     autoenc_model = autoenc_model_type(**autoenc_constructor_args)
-    autoenc_model.load_state_dict(torch.load(os.path.join(autoencoder_name, "model_final.pt")))
+    autoenc_model.load_state_dict(torch.load(
+        os.path.join(autoencoder_name, "model_final.pt")))
     autoenc_model.eval()
     autoenc_model = autoenc_model.encoder
 
@@ -114,5 +116,5 @@ if __name__ == '__main__':
     s = make_state(max_strokes=4, wall_chance=0.3, wall_overlap=0.4)
     return s
   with torch.no_grad():
-    run(model1, transform, state_builder, autoenc_model=autoenc_model, use_policy_render=use_policy_render)
-
+    run(model1, transform, state_builder, autoenc_model=autoenc_model,
+        use_policy_render=use_policy_render)

@@ -12,8 +12,10 @@ from torchvision.transforms import Normalize
 
 from utils import Vec2
 
+
 def render_autoencoder(model, state_builder, transform: Normalize, use_policy_render=False):
-  inputs = render_random_batch(1, state_builder, transform, use_policy_render=use_policy_render)
+  inputs = render_random_batch(
+      1, state_builder, transform, use_policy_render=use_policy_render)
   with torch.no_grad():
     latent = model.encoder(inputs)
     outputs = model.decoder(latent)
@@ -28,7 +30,8 @@ def render_autoencoder(model, state_builder, transform: Normalize, use_policy_re
   outputs = np.clip(outputs, 0, 255).astype(np.uint8)
   # add the third color channel if its missing
   if outputs.shape[2] == 2:
-    outputs = np.concatenate([outputs, np.zeros_like(outputs[:, :, :1])], axis=2)
+    outputs = np.concatenate(
+        [outputs, np.zeros_like(outputs[:, :, :1])], axis=2)
   outputs = pygame.surfarray.make_surface(outputs)
 
   # do the same for inputs
@@ -45,7 +48,8 @@ def render_autoencoder(model, state_builder, transform: Normalize, use_policy_re
 def test_random(model, state_builder, transform, use_policy_render=False):
   # create pygame loop. wait for space press to render a new frame
   pygame.init()
-  screen = pygame.display.set_mode((512, 256), pygame.SCALED | pygame.RESIZABLE)
+  screen = pygame.display.set_mode(
+      (512, 256), pygame.SCALED | pygame.RESIZABLE)
   clock = pygame.time.Clock()
   running = True
   while running:
@@ -53,16 +57,19 @@ def test_random(model, state_builder, transform, use_policy_render=False):
       if event.type == pygame.QUIT:
         running = False
       if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
-        inputs, outputs = render_autoencoder(model, state_builder, transform, use_policy_render)
+        inputs, outputs = render_autoencoder(
+            model, state_builder, transform, use_policy_render)
         screen.blit(inputs, (0, 0))
         screen.blit(outputs, (256, 0))
         pygame.display.flip()
         clock.tick(60)
 
+
 def test_play(model, state_builder, transform, use_policy_render=False):
   # create pygame loop. wait for space press to render a new frame
   pygame.init()
-  screen = pygame.display.set_mode((512, 256), pygame.SCALED | pygame.RESIZABLE)
+  screen = pygame.display.set_mode(
+      (512, 256), pygame.SCALED | pygame.RESIZABLE)
   clock = pygame.time.Clock()
   state = state_builder()
   running = True
@@ -75,7 +82,8 @@ def test_play(model, state_builder, transform, use_policy_render=False):
 
     if step(state, 1/60):
       act(state, Vec2(random.random() * 2 - 1, random.random() * 2 - 1))
-    inputs, outputs = render_autoencoder(model, lambda: state, transform, use_policy_render)
+    inputs, outputs = render_autoencoder(
+        model, lambda: state, transform, use_policy_render)
     screen.blit(inputs, (0, 0))
     screen.blit(outputs, (256, 0))
     pygame.display.flip()
@@ -107,4 +115,3 @@ if __name__ == '__main__':
     transform = pickle.load(f)
 
   test_play(model, state_builder, transform, use_policy_render)
-

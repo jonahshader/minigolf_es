@@ -142,17 +142,25 @@ class TinyCNN2(nn.Module):
     # (batch_size, 3, 256, 256)
     features = 8
     self.pool1 = nn.AvgPool2d(2, 2)  # (batch_size, 3, 128, 128)
-    self.conv1 = nn.Conv2d(3+2, features, 3, padding=1)  # (batch_size, 8, 128, 128)
-    self.conv2 = nn.Conv2d(features, features, 3, padding=1)  # (batch_size, 8, 128, 128)
+    # (batch_size, 8, 128, 128)
+    self.conv1 = nn.Conv2d(3+2, features, 3, padding=1)
+    # (batch_size, 8, 128, 128)
+    self.conv2 = nn.Conv2d(features, features, 3, padding=1)
     self.pool2 = nn.MaxPool2d(2, 2)  # (batch_size, 8, 64, 64)
-    self.conv3 = nn.Conv2d(features, features, 3, padding=1)  # (batch_size, 8, 64, 64)
-    self.conv4 = nn.Conv2d(features, features, 3, padding=1)  # (batch_size, 8, 64, 64)
+    # (batch_size, 8, 64, 64)
+    self.conv3 = nn.Conv2d(features, features, 3, padding=1)
+    # (batch_size, 8, 64, 64)
+    self.conv4 = nn.Conv2d(features, features, 3, padding=1)
     self.pool3 = nn.MaxPool2d(2, 2)  # (batch_size, 8, 32, 32)
-    self.conv5 = nn.Conv2d(features, features, 3, padding=1)  # (batch_size, 8, 32, 32)
-    self.conv6 = nn.Conv2d(features, features, 3, padding=1)  # (batch_size, 8, 32, 32)
+    # (batch_size, 8, 32, 32)
+    self.conv5 = nn.Conv2d(features, features, 3, padding=1)
+    # (batch_size, 8, 32, 32)
+    self.conv6 = nn.Conv2d(features, features, 3, padding=1)
     self.pool4 = nn.MaxPool2d(2, 2)  # (batch_size, 8, 16, 16)
-    self.conv7 = nn.Conv2d(features, features, 3, padding=1)  # (batch_size, 8, 16, 16)
-    self.conv8 = nn.Conv2d(features, 2, 3, padding=1)  # (batch_size, 8, 16, 16)
+    # (batch_size, 8, 16, 16)
+    self.conv7 = nn.Conv2d(features, features, 3, padding=1)
+    # (batch_size, 8, 16, 16)
+    self.conv8 = nn.Conv2d(features, 2, 3, padding=1)
     self.pool5 = nn.AvgPool2d(16, 16)  # (batch_size, 2, 1, 1)
 
     # CoordConv stuff
@@ -183,24 +191,33 @@ class TinyCNN2(nn.Module):
     # tanh to force the output to be in the range [-1, 1]
     # reshape to (batch_size, 2)
     return F.tanh(x.view(x.size(0), 2))
-  
+
+
 class TinyCNN3(nn.Module):
   def __init__(self):
     super().__init__()
     # (batch_size, 3, 256, 256)
     features = 16
     self.pool1 = nn.AvgPool2d(2, 2)  # (batch_size, 3, 128, 128)
-    self.conv1 = nn.Conv2d(3+2, features, 5, padding=2)  # (batch_size, 8, 128, 128)
-    self.conv2 = nn.Conv2d(features, features, 3, padding=1)  # (batch_size, 8, 128, 128)
+    # (batch_size, 8, 128, 128)
+    self.conv1 = nn.Conv2d(3+2, features, 5, padding=2)
+    # (batch_size, 8, 128, 128)
+    self.conv2 = nn.Conv2d(features, features, 3, padding=1)
     self.pool2 = nn.MaxPool2d(2, 2)  # (batch_size, 8, 64, 64)
-    self.conv3 = nn.Conv2d(features, features, 3, padding=1)  # (batch_size, 8, 64, 64)
-    self.conv4 = nn.Conv2d(features, features, 3, padding=1)  # (batch_size, 8, 64, 64)
+    # (batch_size, 8, 64, 64)
+    self.conv3 = nn.Conv2d(features, features, 3, padding=1)
+    # (batch_size, 8, 64, 64)
+    self.conv4 = nn.Conv2d(features, features, 3, padding=1)
     self.pool3 = nn.MaxPool2d(2, 2)  # (batch_size, 8, 32, 32)
-    self.conv5 = nn.Conv2d(features, features, 3, padding=1)  # (batch_size, 8, 32, 32)
-    self.conv6 = nn.Conv2d(features, features, 3, padding=1)  # (batch_size, 8, 32, 32)
+    # (batch_size, 8, 32, 32)
+    self.conv5 = nn.Conv2d(features, features, 3, padding=1)
+    # (batch_size, 8, 32, 32)
+    self.conv6 = nn.Conv2d(features, features, 3, padding=1)
     self.pool4 = nn.MaxPool2d(2, 2)  # (batch_size, 8, 16, 16)
-    self.conv7 = nn.Conv2d(features, features, 3, padding=1)  # (batch_size, 8, 16, 16)
-    self.conv8 = nn.Conv2d(features, 2, 3, padding=1)  # (batch_size, 8, 16, 16)
+    # (batch_size, 8, 16, 16)
+    self.conv7 = nn.Conv2d(features, features, 3, padding=1)
+    # (batch_size, 8, 16, 16)
+    self.conv8 = nn.Conv2d(features, 2, 3, padding=1)
     self.pool5 = nn.AvgPool2d(16, 16)  # (batch_size, 2, 1, 1)
 
     # CoordConv stuff
@@ -231,7 +248,7 @@ class TinyCNN3(nn.Module):
     # tanh to force the output to be in the range [-1, 1]
     # reshape to (batch_size, 2)
     return F.tanh(x.view(x.size(0), 2))
-  
+
 
 class ResModel1(nn.Module):
   def __init__(self, in_channels=32, in_width=16, projection_channels=4, levels=3):
@@ -241,7 +258,7 @@ class ResModel1(nn.Module):
     layers = []
     # TODO: maybe try breaking the projection into multiple layers
     layers.append(nn.Conv2d(in_channels, projection_channels, 1))
-    
+
     for _ in range(levels):
       layers.append(BasicBlock(current_channels, F.relu, scaling=True))
       current_channels *= 2
@@ -254,6 +271,3 @@ class ResModel1(nn.Module):
 
   def forward(self, x):
     return self.model(x)
-
-
-    

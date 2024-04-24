@@ -9,6 +9,7 @@ from utils import Vec2
 
 multithread = False
 
+
 def run_and_eval(state, action, eval_action_count=None):
   if eval_action_count is None:
     eval_action_count = action.shape[0]
@@ -19,10 +20,11 @@ def run_and_eval(state, action, eval_action_count=None):
       break
   return state_loss(state, bounce_cost=10)
 
+
 def ga_simple(state, action: np.ndarray, n: int, loss: float, noise: float, eval_action_count=None, pool: mp.Pool = None) -> tuple[np.ndarray, float]:
   # create n copies of state
   states = [deepcopy(state) for _ in range(n)]
-  
+
   # action is a matrix of shape (p, 2), where p is the number of strokes for par
 
   # we want n of these, so the desired shape is (n, p, 2)
@@ -38,7 +40,8 @@ def ga_simple(state, action: np.ndarray, n: int, loss: float, noise: float, eval
 
   # run each state with the corresponding action
   # TODO: multithread this
-  losses = [run_and_eval(states[i], actions[i], eval_action_count) for i in range(n)]
+  losses = [run_and_eval(states[i], actions[i], eval_action_count)
+            for i in range(n)]
   # pick the best loss
   best_loss = min(losses)
   if best_loss < loss:
@@ -46,10 +49,10 @@ def ga_simple(state, action: np.ndarray, n: int, loss: float, noise: float, eval
     return actions[best_idx], best_loss
   else:
     return action, loss
-    
+
 
 if __name__ == '__main__':
-  p=4
+  p = 4
   iterations = 32
   population_size = 512
   while True:
@@ -61,7 +64,8 @@ if __name__ == '__main__':
 
     # run the genetic algorithm
     for i in range(iterations):
-      action, loss = ga_simple(state, action, iterations, loss, 1 / (i * 0.2 + 1))
+      action, loss = ga_simple(
+          state, action, iterations, loss, 1 / (i * 0.2 + 1))
       print(f'Iteration {i}, loss: {loss}')
       if loss == 0:
         break
@@ -71,9 +75,9 @@ if __name__ == '__main__':
     # render the playthrough
     screen = pygame.display.set_mode(
         (state['size'], state['size']), pygame.SCALED | pygame.RESIZABLE)
-    
+
     clock = pygame.time.Clock()
-    
+
     running = True
     action_index = 0
     while running:
@@ -98,5 +102,3 @@ if __name__ == '__main__':
       surface = render_state(state, screen, extras=True)
       pygame.display.flip()
       clock.tick(45)
-
-

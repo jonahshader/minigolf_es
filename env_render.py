@@ -45,7 +45,6 @@ def render_state_for_policy(state, wall_surface=None, ball_surface=None, hole_su
 
   offset = ball.pos - Vec2(size / 2, size / 2)
 
-  
   scale = 0.5
 
   # render to individual surfaces
@@ -63,7 +62,6 @@ def render_state_for_policy(state, wall_surface=None, ball_surface=None, hole_su
     hole.render_for_policy(hole_surface, offset, size, scale)
 
 
-
 def render_state_tensor(states, transform=None):
   surface = None
   tensors = []
@@ -78,6 +76,7 @@ def render_state_tensor(states, transform=None):
     tensors.append(surface_rgb)
 
   return torch.cat(tensors, dim=0)
+
 
 def render_state_tensor_for_policy(states, transform=None):
   wall_surface = pygame.Surface((states[0]['size'], states[0]['size']))
@@ -111,7 +110,7 @@ if __name__ == '__main__':
   state = state_builder()
   screen = pygame.display.set_mode(
       (state['size'] * 2, state['size']), pygame.SCALED | pygame.RESIZABLE)
-  
+
   wall_surface = pygame.Surface((state['size'], state['size']))
   ball_surface = pygame.Surface((state['size'], state['size']))
   hole_surface = pygame.Surface((state['size'], state['size']))
@@ -141,7 +140,6 @@ if __name__ == '__main__':
     # convert back to surface
     policy_surface = pygame.surfarray.make_surface(np_surface)
     screen.blit(policy_surface, (state['size'], 0))
-
 
     pygame.display.flip()
     clock.tick(60)

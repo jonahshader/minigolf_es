@@ -83,9 +83,9 @@ def create_mutated_models(model, model_args, batch_size, device, standard_dev):
   # create noise tensors matching the model parameters
   # only generate half, then apply each noise twice: once positive and once negative
   noises = [[torch.randn_like(p, device=device)
-              for p in model.parameters()] for _ in range(batch_size // 2)]
+             for p in model.parameters()] for _ in range(batch_size // 2)]
   noises = noises + [[-noise for noise in noise_list]
-                      for noise_list in noises]
+                     for noise_list in noises]
 
   # add noise to the model parameters
   for m, noise_list in zip(models, noises):
@@ -93,15 +93,15 @@ def create_mutated_models(model, model_args, batch_size, device, standard_dev):
       p.add_(noise * standard_dev)
 
   return models, noises
-               
 
-def train_step(states, model, optimizer, batch_size, pool: mp.Pool, device='cpu', standard_dev=0.01, 
+
+def train_step(states, model, optimizer, batch_size, pool: mp.Pool, device='cpu', standard_dev=0.01,
                encoder_model=None, use_policy_render=False, model_args={}, transform=None):
   # clone the states for each batch
   states_batches = [deepcopy(states) for _ in range(batch_size)]
 
-  models, noises = create_mutated_models(model, model_args, batch_size, device, standard_dev)
-
+  models, noises = create_mutated_models(
+      model, model_args, batch_size, device, standard_dev)
 
   # rewrite to use tensor rendering
   running = True
@@ -115,15 +115,18 @@ def train_step(states, model, optimizer, batch_size, pool: mp.Pool, device='cpu'
     #     return render_state_tensor_for_policy(state_batch, transform=transform)
     #   else:
     #     return render_state_tensor(state_batch, transform=transform)
-    
-    surface_batches = [render_fun(state_batch) for state_batch in states_batches]
+
+    surface_batches = [render_fun(state_batch)
+                       for state_batch in states_batches]
     # run in parallel
     # surface_batches = pool.map(render_fun_closure, states_batches)
-    surface_batches = [surface_batch.to(device) for surface_batch in surface_batches]
+    surface_batches = [surface_batch.to(device)
+                       for surface_batch in surface_batches]
 
     # if using an autoencoder, encode the surfaces
     if encoder_model is not None:
-      surface_batches = [encoder_model(surface_batch) for surface_batch in surface_batches]
+      surface_batches = [encoder_model(surface_batch)
+                         for surface_batch in surface_batches]
 
     # compute hit directions for all states
     if print_timings:
@@ -134,7 +137,7 @@ def train_step(states, model, optimizer, batch_size, pool: mp.Pool, device='cpu'
       # TODO: only compute for states that are not done
       hit_direction_batch = m(surface_batch)
       hit_direction_batch = [Vec2(*d.cpu().numpy().tolist())
-                              for d in hit_direction_batch]
+                             for d in hit_direction_batch]
       hit_direction_batches.append(hit_direction_batch)
 
     # act on all states
@@ -200,13 +203,18 @@ def train_step(states, model, optimizer, batch_size, pool: mp.Pool, device='cpu'
 
   return losses
 
+
 early_exit = False
+
+
 def signal_handler(sig, frame):
   global early_exit
   early_exit = True
   print("Early exit requested")
 
+
 signal.signal(signal.SIGINT, signal_handler)
+
 
 def train(config, state_builder):
   use_wandb = config['use_wandb']
@@ -220,7 +228,7 @@ def train(config, state_builder):
   model_args = config['model_args']
   run_name = config['run_name']
   device = config['device']
-  resume_from = None # TODO: implement resume_from
+  resume_from = None  # TODO: implement resume_from
   assert run_name is not None, "Please specify a run name"
 
   use_autoencoder = config['use_autoencoder']
@@ -234,7 +242,8 @@ def train(config, state_builder):
     autoenc_model_type = autoenc_config['model_type']
     autoenc_constructor_args = autoenc_config['constructor_args']
     autoenc_model = autoenc_model_type(**autoenc_constructor_args)
-    autoenc_model.load_state_dict(torch.load(os.path.join(autoencoder_name, "model_final.pt")))
+    autoenc_model.load_state_dict(torch.load(
+        os.path.join(autoencoder_name, "model_final.pt")))
     autoenc_model.eval()
     autoenc_model = autoenc_model.encoder.to(device)
 
@@ -263,7 +272,8 @@ def train(config, state_builder):
   model = model_type(**model_args).to(device)
   if resume_from is not None:
     print(f"Resuming from {resume_from}")
-    model.load_state_dict(torch.load(os.path.join(resume_from, "model_latest.pt")))
+    model.load_state_dict(torch.load(
+        os.path.join(resume_from, "model_latest.pt")))
 
   # print the number of parameters
   num_params = sum(p.numel() for p in model.parameters())
@@ -293,7 +303,8 @@ def train(config, state_builder):
 
   if use_wandb:
     wandb.login()
-    wandb_config = {**deepcopy(config), 'device': str(device), 'model_type': model_type.__name__}
+    wandb_config = {
+        **deepcopy(config), 'device': str(device), 'model_type': model_type.__name__}
     wandb.init(project="minigolf_es", config=wandb_config, name=run_name)
 
   best_avg_loss = None
@@ -304,9 +315,9 @@ def train(config, state_builder):
     if random_states:
       states = [state_builder() for _ in range(states_per_batch)]
     losses = train_step(states, model, optimizer, batch_size, pool,
-                                        device=device, standard_dev=standard_dev,
-                                        encoder_model=autoenc_model,
-                                        use_policy_render=use_policy_render, transform=transform)
+                        device=device, standard_dev=standard_dev,
+                        encoder_model=autoenc_model,
+                        use_policy_render=use_policy_render, transform=transform)
     # sort the losses
     losses = losses.cpu().numpy()
     losses = losses[np.argsort(losses)]
@@ -341,7 +352,6 @@ def train(config, state_builder):
           f.write(f"Iteration: {i}\n")
       torch.save(model.state_dict(), os.path.join(run_name, "model_latest.pt"))
 
-
   pool.close()
   pool.join()
   pool.terminate()
@@ -350,24 +360,27 @@ def train(config, state_builder):
   print("Saving final model")
   torch.save(model.state_dict(), os.path.join(run_name, "model_final.pt"))
 
+
 def default_config():
   return {
-    'device': torch.device('cuda' if torch.cuda.is_available() else 'cpu'),
-    'use_wandb': True,
-    'states_per_batch': 1,
-    'batch_size': 1024,
-    'iters': 2000,
-    'lr': 2e-3,
-    'standard_dev': 0.01,
-    'random_states': True,
-    'model_type': ResModel1,
-    'model_args': {},
-    'run_name': None,
-    'resume_from': None,
-    'use_policy_render': False, # if use_autoencoder is True, this will be set to the value from the autoencoder config
-    'use_autoencoder': False,
-    'autoencoder_name': "resnet_1",
+      'device': torch.device('cuda' if torch.cuda.is_available() else 'cpu'),
+      'use_wandb': True,
+      'states_per_batch': 1,
+      'batch_size': 1024,
+      'iters': 2000,
+      'lr': 2e-3,
+      'standard_dev': 0.01,
+      'random_states': True,
+      'model_type': ResModel1,
+      'model_args': {},
+      'run_name': None,
+      'resume_from': None,
+      # if use_autoencoder is True, this will be set to the value from the autoencoder config
+      'use_policy_render': False,
+      'use_autoencoder': False,
+      'autoencoder_name': "resnet_1",
   }
+
 
 if __name__ == '__main__':
   config = default_config()
@@ -381,6 +394,7 @@ if __name__ == '__main__':
   config['use_autoencoder'] = True
   config['autoencoder_name'] = 'resnet_1'
   config['run_name'] = 'ResModel1_encoded_2'
+
   def state_builder():
     s = make_state(max_strokes=1, wall_chance=0.3, wall_overlap=0.4)
     return s

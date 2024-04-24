@@ -15,7 +15,6 @@ from env_render import render_state_tensor, render_state_tensor_for_policy
 from utils import Ball, Vec2
 
 
-
 def render_random_batch(batch_size, state_builder, transform=None, use_policy_render=False):
   states = [state_builder() for _ in range(batch_size)]
   if use_policy_render:
@@ -48,7 +47,8 @@ def train(config, model):
   if use_wandb:
     import wandb
     # override non string values
-    wandb_config = {**deepcopy(config), 'device': str(device), 'model_type': model_type.__class__.__name__}
+    wandb_config = {**deepcopy(config), 'device': str(device),
+                    'model_type': model_type.__class__.__name__}
     # remove non serializable values
     wandb_config.pop('state_builder')
     wandb.init(project='minigolf_es_autoencoder', config=config, name=run_name)
@@ -60,9 +60,9 @@ def train(config, model):
 
   # training loop
   for i in range(iters):
-    inputs = render_random_batch(batch_size, state_builder, transform=transform, use_policy_render=use_policy_render).to(device)
+    inputs = render_random_batch(
+        batch_size, state_builder, transform=transform, use_policy_render=use_policy_render).to(device)
     outputs = compiled_model(inputs)
-
 
     loss = criterion(outputs, inputs)
     optimizer.zero_grad()
@@ -75,7 +75,8 @@ def train(config, model):
         wandb.log({'loss': loss.item(), 'iter': i})
     if i % 50 == 0:
       # save the model
-      torch.save(model.state_dict(), os.path.join(run_name, f'model_latest.pt'))
+      torch.save(model.state_dict(), os.path.join(
+          run_name, f'model_latest.pt'))
 
   # save the final model
   torch.save(model.state_dict(), os.path.join(run_name, 'model_final.pt'))
@@ -90,16 +91,17 @@ def train(config, model):
 
 def default_config():
   return {
-    'device': torch.device('cuda' if torch.cuda.is_available() else 'cpu'),
-    'use_wandb': True,
-    'use_policy_render': False,
-    'batch_size': 64,
-    'iters': 1000,
-    'model_type': BasicAutoencoder,
-    'lr': 1e-3,
-    'run_name': 'basic_autoencoder',
-    'state_builder': make_state,
+      'device': torch.device('cuda' if torch.cuda.is_available() else 'cpu'),
+      'use_wandb': True,
+      'use_policy_render': False,
+      'batch_size': 64,
+      'iters': 1000,
+      'model_type': BasicAutoencoder,
+      'lr': 1e-3,
+      'run_name': 'basic_autoencoder',
+      'state_builder': make_state,
   }
+
 
 def build_state():
   s = make_state()
@@ -108,12 +110,14 @@ def build_state():
   s['ball_start'] = ball_start
   return s
 
+
 if __name__ == '__main__':
   config = default_config()
   config['model_type'] = ResAutoencoder
   config['use_policy_render'] = True
   block_pattern = [False, True] * 4
-  constructor_args = {'channels': 2, 'block_pattern': block_pattern, 'act': F.gelu}
+  constructor_args = {'channels': 2,
+                      'block_pattern': block_pattern, 'act': F.gelu}
   config['constructor_args'] = constructor_args
   model = config['model_type'](**constructor_args)
 

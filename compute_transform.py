@@ -7,6 +7,7 @@ import torch
 # transforms
 from torchvision.transforms import Normalize
 
+
 def create_transform(states=None):
   # Create a batch of states
   if states is None:
@@ -19,12 +20,11 @@ def create_transform(states=None):
   surface_rgb = [
       np.ascontiguousarray(pygame.surfarray.pixels3d(surface))
       for surface in surfaces
-  ] # list of numpy arrays of shape (size, size, 3)
+  ]  # list of numpy arrays of shape (size, size, 3)
 
   # Convert the RGB arrays to a PyTorch tensor
   # first convert the list of numpy arrays to a numpy array of shape (512, size, size, 3)
   surface_tensor = torch.from_numpy(np.stack(surface_rgb)).float()
-  
 
   # compute mean and std per channel
   mean = surface_tensor.mean(dim=(0, 1, 2))
@@ -34,6 +34,7 @@ def create_transform(states=None):
   transform = Normalize(mean, std)
 
   return transform
+
 
 def create_transform_for_policy(states=None):
   # this function is similar to create_transform, but it uses render_state_for_policy

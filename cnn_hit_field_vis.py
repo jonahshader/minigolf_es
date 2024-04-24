@@ -11,12 +11,12 @@ from compute_transform import create_transform
 
 from env_render import render_state_tensor, render_state_tensor_for_policy, render_state
 
+
 def create_hit_field(model, transform, state, autoenc_model, use_policy_render, pixel_size=1, device='cpu'):
   size = state['size']
 
   hit_field = torch.zeros(2, size // pixel_size, size // pixel_size).to(device)
-  
-  
+
   print('Rendering surfaces...')
   for y in range(size // pixel_size):
     surface_tensors = []
@@ -36,9 +36,11 @@ def create_hit_field(model, transform, state, autoenc_model, use_policy_render, 
     hit_direction = model(surface_tensor)
     # hit_field[:, y, x] = hit_direction[0][:]
     # hit_field = hit_direction.permute(1, 0).reshape(2, size // pixel_size, size // pixel_size)
-    hit_field[:, y, :] = hit_direction.permute(1, 0).reshape(2, size // pixel_size)
+    hit_field[:, y, :] = hit_direction.permute(
+        1, 0).reshape(2, size // pixel_size)
 
   return hit_field.cpu()
+
 
 def render_hit_field(surface, hit_field, pixel_size=1):
   size = hit_field.shape[1]
@@ -48,9 +50,11 @@ def render_hit_field(surface, hit_field, pixel_size=1):
       # pygame.draw.line(surface, (255, 0, 0), (x, y), (x + hit_direction[0].item() * 10, y + hit_direction[1].item() * 10))
       # colorize the hit direction, using color wheel
       angle = np.arctan2(hit_direction[1].item(), hit_direction[0].item())
-      color = (np.cos(angle) * 127 + 128, np.cos(angle + 2 * np.pi / 3) * 127 + 128, np.cos(angle + 4 * np.pi / 3) * 127 + 128)
+      color = (np.cos(angle) * 127 + 128, np.cos(angle + 2 * np.pi / 3)
+               * 127 + 128, np.cos(angle + 4 * np.pi / 3) * 127 + 128)
       # color in pixel
-      pygame.draw.rect(surface, color, pygame.Rect(x * pixel_size, y * pixel_size, pixel_size, pixel_size))
+      pygame.draw.rect(surface, color, pygame.Rect(
+          x * pixel_size, y * pixel_size, pixel_size, pixel_size))
 
 
 def run(model, transform, make_state_func=make_state, autoenc_model=None, use_policy_render=False, device='cpu'):
@@ -59,9 +63,10 @@ def run(model, transform, make_state_func=make_state, autoenc_model=None, use_po
   state = make_state_func()
   screen = pygame.display.set_mode(
       (state['size'], state['size']), pygame.SCALED | pygame.RESIZABLE)
-  
+
   print('Creating hit field...')
-  hit_field = create_hit_field(model, transform, state, autoenc_model, use_policy_render, pixel_size=pixel_size, device=device)
+  hit_field = create_hit_field(model, transform, state, autoenc_model,
+                               use_policy_render, pixel_size=pixel_size, device=device)
   print('Rendering hit field...')
   render_hit_field(screen, hit_field, pixel_size=pixel_size)
   render_state(state, screen, no_clear=True)
@@ -79,11 +84,11 @@ def run(model, transform, make_state_func=make_state, autoenc_model=None, use_po
         elif event.key == pygame.K_SPACE:
           state = make_state_func()
           print('Creating hit field...')
-          hit_field = create_hit_field(model, transform, state, autoenc_model, use_policy_render, pixel_size=pixel_size, device=device)
+          hit_field = create_hit_field(
+              model, transform, state, autoenc_model, use_policy_render, pixel_size=pixel_size, device=device)
           print('Rendering hit field...')
           render_hit_field(screen, hit_field, pixel_size=pixel_size)
           render_state(state, screen, no_clear=True)
-
 
     pygame.display.flip()
     clock.tick(60)
@@ -118,7 +123,8 @@ if __name__ == '__main__':
     autoenc_model_type = autoenc_config['model_type']
     autoenc_constructor_args = autoenc_config['constructor_args']
     autoenc_model = autoenc_model_type(**autoenc_constructor_args)
-    autoenc_model.load_state_dict(torch.load(os.path.join(autoencoder_name, "model_final.pt")))
+    autoenc_model.load_state_dict(torch.load(
+        os.path.join(autoencoder_name, "model_final.pt")))
     autoenc_model.eval()
     autoenc_model = autoenc_model.encoder
     autoenc_model.to(device)
@@ -147,5 +153,5 @@ if __name__ == '__main__':
     s = make_state(max_strokes=4, wall_chance=0.3, wall_overlap=0.4)
     return s
   with torch.no_grad():
-    run(model1, transform, state_builder, autoenc_model=autoenc_model, use_policy_render=use_policy_render, device=device)
-
+    run(model1, transform, state_builder, autoenc_model=autoenc_model,
+        use_policy_render=use_policy_render, device=device)

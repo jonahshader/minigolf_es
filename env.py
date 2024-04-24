@@ -38,17 +38,21 @@ def make_walls(ball_start, hole_start, size, wall_subsections, wall_chance, wall
 def make_state(size=256, max_strokes=4, wall_subsections=5, wall_chance=0.5, wall_overlap=0.5):
   # ball_start = Vec2(random.random() * 0.125 + 0.125, random.random() * 0.125 + 0.125) * size
   # hole_start = Vec2(size, size) - ball_start
-  ball_start = Vec2(random.random() * 0.8 + 0.1, random.random() * 0.8 + 0.1) * size
-  hole_start = Vec2(random.random() * 0.8 + 0.1, random.random() * 0.8 + 0.1) * size
+  ball_start = Vec2(random.random() * 0.8 + 0.1,
+                    random.random() * 0.8 + 0.1) * size
+  hole_start = Vec2(random.random() * 0.8 + 0.1,
+                    random.random() * 0.8 + 0.1) * size
 
   walls = make_walls(ball_start, hole_start, size,
                      wall_subsections, wall_chance, wall_overlap)
-  
+
   # add walls around the edge, inset
   inset = 3
   walls.append(Wall(Line(Vec2(inset, inset), Vec2(size-inset, inset))))
-  walls.append(Wall(Line(Vec2(size-inset, inset), Vec2(size-inset, size-inset))))
-  walls.append(Wall(Line(Vec2(size-inset, size-inset), Vec2(inset, size-inset))))
+  walls.append(
+      Wall(Line(Vec2(size-inset, inset), Vec2(size-inset, size-inset))))
+  walls.append(
+      Wall(Line(Vec2(size-inset, size-inset), Vec2(inset, size-inset))))
   walls.append(Wall(Line(Vec2(inset, size-inset), Vec2(inset, inset))))
 
   return {
@@ -138,7 +142,7 @@ def run(state, dt):
     #   print(f"strokes: {strokes}")
     #   print(f"max_strokes: {max_strokes}")
     #   print(f"ball_vel: {ball.vel}")
-      
+
     #   # exit program
     #   exit(1)
 

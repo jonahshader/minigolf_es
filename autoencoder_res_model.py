@@ -1,6 +1,7 @@
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class BasicBlock(nn.Module):
   """ResNet-ish block. Four configs possible:
   transpose=False, scaling=False : normal block
@@ -8,6 +9,7 @@ class BasicBlock(nn.Module):
   transpose=True, scaling=False  : normal transpose block
   transpose=True, scaling=True   : up block. halves channels, doubles width and height
   """
+
   def __init__(self, channels, act, transpose=False, scaling=False):
     super().__init__()
     self.act = act
@@ -17,15 +19,20 @@ class BasicBlock(nn.Module):
     scale = 2 if scaling else 1
 
     self.bn1 = nn.BatchNorm2d(channels)
-    self.bn2 = nn.BatchNorm2d(channels // scale if transpose else channels * scale)
+    self.bn2 = nn.BatchNorm2d(
+        channels // scale if transpose else channels * scale)
     if transpose:
       out_channels = channels // scale
-      self.conv1 = nn.ConvTranspose2d(channels, out_channels, 3, stride=scale, padding=1, output_padding=(1 if scaling else 0))
-      self.conv2 = nn.ConvTranspose2d(out_channels, out_channels, 3, stride=1, padding=1)
+      self.conv1 = nn.ConvTranspose2d(
+          channels, out_channels, 3, stride=scale, padding=1, output_padding=(1 if scaling else 0))
+      self.conv2 = nn.ConvTranspose2d(
+          out_channels, out_channels, 3, stride=1, padding=1)
     else:
       out_channels = channels * scale
-      self.conv1 = nn.Conv2d(channels, out_channels, 3, stride=scale, padding=1)
-      self.conv2 = nn.Conv2d(out_channels, out_channels, 3, stride=1, padding=1)
+      self.conv1 = nn.Conv2d(channels, out_channels, 3,
+                             stride=scale, padding=1)
+      self.conv2 = nn.Conv2d(out_channels, out_channels,
+                             3, stride=1, padding=1)
 
     if scaling:
       self.projection = nn.Conv2d(channels, out_channels, 1)
@@ -66,7 +73,7 @@ class BasicBlock(nn.Module):
     #   x_res = x
 
     return x_next + x_res
-  
+
 
 class ResAutoencoder(nn.Module):
   def __init__(self, channels, block_pattern, act=F.relu):
@@ -74,13 +81,15 @@ class ResAutoencoder(nn.Module):
     encoder_blocks = []
     current_channels = channels
     for scaling in block_pattern:
-      encoder_blocks.append(BasicBlock(current_channels, act, transpose=False, scaling=scaling))
+      encoder_blocks.append(BasicBlock(
+          current_channels, act, transpose=False, scaling=scaling))
       if scaling:
         current_channels *= 2
 
     decoder_blocks = []
     for scaling in reversed(block_pattern):
-      decoder_blocks.append(BasicBlock(current_channels, act, transpose=True, scaling=scaling))
+      decoder_blocks.append(BasicBlock(
+          current_channels, act, transpose=True, scaling=scaling))
       if scaling:
         current_channels //= 2
 
@@ -90,5 +99,3 @@ class ResAutoencoder(nn.Module):
   def forward(self, x):
     latent = self.encoder(x)
     return self.decoder(latent)
-
-  
