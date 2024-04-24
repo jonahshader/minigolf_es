@@ -219,11 +219,15 @@ def train_step(states, model, optimizer, batch_size, pool: mp.Pool, device='cpu'
 
     return losses, surface_batches
 
+
 early_exit = False
+
+
 def signal_handler(sig, frame):
   global early_exit
   early_exit = True
   print("Early exit requested")
+
 
 signal.signal(signal.SIGINT, signal_handler)
 
@@ -310,7 +314,6 @@ if __name__ == '__main__':
           f.write(f"Best avg loss: {best_avg_loss}\n")
           f.write(f"Iteration: {i}\n")
       torch.save(model.state_dict(), os.path.join(run_name, "model_latest.pt"))
-
 
   pool.close()
   pool.join()
