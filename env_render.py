@@ -5,7 +5,7 @@ from env import make_state
 from utils import Vec2
 
 
-def render_state(state, surface=None, extras=False):
+def render_state(state, surface=None, extras=False, no_clear=False):
   pygame.init()
 
   ball = state['ball']
@@ -19,7 +19,8 @@ def render_state(state, surface=None, extras=False):
     surface = pygame.Surface((size, size))
 
   # clear surface with white
-  surface.fill((64, 230, 12))
+  if not no_clear:
+    surface.fill((64, 230, 12))
 
   # render game state
   hole.render(surface)

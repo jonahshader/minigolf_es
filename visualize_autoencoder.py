@@ -84,7 +84,8 @@ def test_play(model, state_builder, transform, use_policy_render=False):
 
 if __name__ == '__main__':
   # run_name = 'basic_3_no_linear_longer'
-  run_name = 'policy_autoencoder_smaller_2'
+  # run_name = 'resnet_1'
+  run_name = 'resnet_full_1'
 
   # load the config and model
   with open(os.path.join(run_name, 'config.pkl'), 'rb') as f:
@@ -92,12 +93,14 @@ if __name__ == '__main__':
 
   model_type = config['model_type']
   constructor_args = config['constructor_args']
+  print(constructor_args)
   use_policy_render = config['use_policy_render']
   state_builder = make_state
 
   print(f'Loading model of type {model_type.__name__}')
   model = model_type(**constructor_args)
   model.load_state_dict(torch.load(os.path.join(run_name, 'model_final.pt')))
+  model.eval()
 
   # load the transform
   with open(os.path.join(run_name, 'transform.pkl'), 'rb') as f:
