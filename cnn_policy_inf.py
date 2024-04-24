@@ -71,7 +71,7 @@ if __name__ == '__main__':
 
   # load model from models/model_10.pt
   model1 = BasicCNN()
-  model1.load_state_dict(torch.load('models/model_40.pt'))
+  model1.load_state_dict(torch.load('lr_2/model_best.pt'))
 
   # print some parameters
   # print(model.conv1.weight)
