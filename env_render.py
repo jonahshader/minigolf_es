@@ -11,6 +11,7 @@ def render_state(state, surface=None, extras=False, no_clear=False):
   ball = state['ball']
   hole = state['hole']
   walls = state['walls']
+  surfaces = state['surfaces']
   size = state['size']
   ball_start = state['ball_start']
 
@@ -21,6 +22,10 @@ def render_state(state, surface=None, extras=False, no_clear=False):
   # clear surface with white
   if not no_clear:
     surface.fill((64, 230, 12))
+
+  # render surfaces
+  for surf in surfaces:
+    surf.render(surface)
 
   # render game state
   hole.render(surface)
