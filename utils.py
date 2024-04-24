@@ -57,6 +57,11 @@ class Hole:
     pygame.draw.circle(
         surface, (0, 0, 0), (self.pos.x, self.pos.y), self.radius - Ball.radius)
 
+  def render_for_policy(self, surface, offset, size, scale):
+    # render the hole, offset by the ball's position
+    pygame.draw.circle(
+        surface, (255, 0, 0), ((self.pos.x - size/2) * scale + size/2 - offset.x * scale, (self.pos.y - size/2) * scale + size/2 - offset.y * scale), self.radius - Ball.radius)
+
 
 class Line:
   def __init__(self, start, end):
@@ -100,6 +105,11 @@ class Wall:
     pygame.draw.line(surface, (200, 170, 150), (self.line.start.x, self.line.start.y),
                      (self.line.end.x, self.line.end.y), Wall.thickness)
 
+  def render_for_policy(self, surface, offset, size, scale):
+    # render the wall, offset by the ball's position
+    pygame.draw.line(surface, (0, 255, 0), ((self.line.start.x - size/2) * scale + size/2 - offset.x * scale, (self.line.start.y - size/2) * scale + size/2 - offset.y * scale),
+                     ((self.line.end.x - size/2) * scale + size/2 - offset.x * scale, (self.line.end.y - size/2) * scale + size/2 - offset.y * scale), Wall.thickness)
+
 
 class Rect:
   def __init__(self, pos, size):
@@ -142,7 +152,7 @@ class CourseSurface:
 
 
 class Ball:
-  friction = 20  # 1/s^2
+  friction = 25  # 1/s^2
   radius = 4
 
   def __init__(self, pos):
@@ -157,7 +167,12 @@ class Ball:
     pygame.draw.circle(surface, (225, 255, 255),
                        (self.pos.x, self.pos.y), Ball.radius)
 
-  def update(self, state, dt) -> bool:
+  def render_for_policy(self, surface, offset, size, scale):
+    # render the ball, offset by the ball's position
+    pygame.draw.circle(surface, (0, 0, 255),
+                       ((self.pos.x - size/2) * scale + size/2 - offset.x * scale, (self.pos.y - size/2) * scale + size/2 - offset.y * scale), Ball.radius)
+
+  def update(self, state, dt) -> tuple[bool, bool]:
     """Update the ball's state and return whether the ball is stopped."""
     hole = state["hole"]
     walls = state["walls"]
@@ -169,6 +184,7 @@ class Ball:
     # check if the ball hits a wall
     # simple collision resolution: move the ball back and reflect the velocity
     movement = Line(old_pos, self.pos)
+    bounced = False
     for wall in walls:
       intersection = wall.line.intersect(movement)
       if intersection is not None:
@@ -177,6 +193,7 @@ class Ball:
         normal = Vec2(-normal.y, normal.x)
         self.vel = self.vel - normal * \
             wall.bounce_coeff * self.vel.dot(normal) * 2
+        bounced = True
 
     # check if the ball is in the hole
     if hole.contains(self.pos):
@@ -195,4 +212,4 @@ class Ball:
     new_vel_mag = max(0, vel_mag - friction * dt)
     self.vel = self.vel.set_magnitude(new_vel_mag)
 
-    return new_vel_mag == 0
+    return new_vel_mag == 0, bounced
