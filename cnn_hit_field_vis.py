@@ -1,3 +1,4 @@
+import math
 from model import BasicCNN, ConstModel, BasicCNNNoMag, TinyCNN, TinyCNN2, TinyCNN3
 from env import make_state, is_done, step, act
 from utils import Vec2
@@ -55,10 +56,24 @@ def render_hit_field(surface, hit_field, pixel_size=1):
       # color in pixel
       pygame.draw.rect(surface, color, pygame.Rect(
           x * pixel_size, y * pixel_size, pixel_size, pixel_size))
+      
+def render_hit_field_as_vectors(surface, hit_field, pixel_size=1):
+  size = hit_field.shape[1]
+  for y in range(size):
+    for x in range(size):
+      hit_direction = hit_field[:, y, x]
+      # draw a line from the center of the pixel to the direction, colored by magnitude
+      brightness = min(np.linalg.norm(hit_direction) / math.sqrt(2), 1)
+      color = (255 * brightness, 255 * brightness, 255 * brightness)
+      pygame.draw.line(surface, color, (x * pixel_size, y * pixel_size), (x * pixel_size + hit_direction[0].item() * 4, y * pixel_size + hit_direction[1].item() * 4))
+      # add a red 1x1 pixel at the start of the line
+      pygame.draw.rect(surface, (255, 0, 0), pygame.Rect(
+          x * pixel_size, y * pixel_size, 1, 1))
+
 
 
 def run(model, transform, make_state_func=make_state, autoenc_model=None, use_policy_render=False, device='cpu'):
-  pixel_size = 2
+  pixel_size = 8
   print('Testing cnn policy...')
   state = make_state_func()
   screen = pygame.display.set_mode(
@@ -68,7 +83,10 @@ def run(model, transform, make_state_func=make_state, autoenc_model=None, use_po
   hit_field = create_hit_field(model, transform, state, autoenc_model,
                                use_policy_render, pixel_size=pixel_size, device=device)
   print('Rendering hit field...')
-  render_hit_field(screen, hit_field, pixel_size=pixel_size)
+  # clear screen
+  screen.fill((0, 0, 0))
+  # render_hit_field(screen, hit_field, pixel_size=pixel_size)
+  render_hit_field_as_vectors(screen, hit_field, pixel_size=pixel_size)
   render_state(state, screen, no_clear=True)
 
   clock = pygame.time.Clock()
@@ -87,7 +105,9 @@ def run(model, transform, make_state_func=make_state, autoenc_model=None, use_po
           hit_field = create_hit_field(
               model, transform, state, autoenc_model, use_policy_render, pixel_size=pixel_size, device=device)
           print('Rendering hit field...')
-          render_hit_field(screen, hit_field, pixel_size=pixel_size)
+          screen.fill((0, 0, 0))
+          # render_hit_field(screen, hit_field, pixel_size=pixel_size)
+          render_hit_field_as_vectors(screen, hit_field, pixel_size=pixel_size)
           render_state(state, screen, no_clear=True)
 
     pygame.display.flip()

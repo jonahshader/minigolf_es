@@ -18,7 +18,7 @@ def run_and_eval(state, action, eval_action_count=None):
     run(state, 1/60)
     if is_done(state):
       break
-  return state_loss(state, bounce_cost=10)
+  return state_loss(state, bounce_cost=0, frame_cost=0.0001)
 
 
 def ga_simple(state, action: np.ndarray, n: int, loss: float, noise: float, eval_action_count=None, pool: mp.Pool = None) -> tuple[np.ndarray, float]:
@@ -50,33 +50,47 @@ def ga_simple(state, action: np.ndarray, n: int, loss: float, noise: float, eval
   else:
     return action, loss
 
+def state_builder():
+  return make_state(max_strokes=4, num_surfaces=3, max_surface_size=128)
 
 if __name__ == '__main__':
   p = 4
-  iterations = 32
-  population_size = 512
+  iterations = 64
+  population_size = 16
+  initial_population_size = 128
+
+  state = state_builder()
+  # render the playthrough
+  screen = pygame.display.set_mode(
+      (state['size'], state['size']), pygame.SCALED | pygame.RESIZABLE)
+
+  clock = pygame.time.Clock()
+  
   while True:
-    state = make_state(max_strokes=p)
+    state = state_builder()
+    render_state(state, screen, extras=True)
+    pygame.display.flip()
     action = np.random.normal(0, 0.1, (p, 2))
 
     # compute the loss of the initial action
     loss = run_and_eval(deepcopy(state), action)
+    print(f'Initial loss: {loss}')
+
+    # run with higher initial population size
+    action, loss = ga_simple(
+        state, action, initial_population_size, loss, 2)
+    print(f'Initial population loss: {loss}')
 
     # run the genetic algorithm
     for i in range(iterations):
       action, loss = ga_simple(
-          state, action, iterations, loss, 1 / (i * 0.2 + 1))
+          state, action, population_size, loss, 1 / (i * 0.2 + 1))
       print(f'Iteration {i}, loss: {loss}')
-      if loss == 0:
+      if loss <= 1.1:
         break
 
-    print(f'Final action: {action}, loss: {loss}')
+    print(f'Final action:\n{action}, loss: {loss}')
 
-    # render the playthrough
-    screen = pygame.display.set_mode(
-        (state['size'], state['size']), pygame.SCALED | pygame.RESIZABLE)
-
-    clock = pygame.time.Clock()
 
     running = True
     action_index = 0
@@ -84,12 +98,14 @@ if __name__ == '__main__':
       for event in pygame.event.get():
         if event.type == pygame.QUIT:
           running = False
+          print('Quitting')
         elif event.type == pygame.KEYDOWN:
           if event.key == pygame.K_ESCAPE:
             running = False
 
       if is_done(state):
         running = False
+        print('Done')
 
       if step(state, 1/60):
         if action_index < p:
@@ -99,6 +115,6 @@ if __name__ == '__main__':
           print('Ran out of actions')
           running = False
 
-      surface = render_state(state, screen, extras=True)
+      render_state(state, screen, extras=True)
       pygame.display.flip()
       clock.tick(45)

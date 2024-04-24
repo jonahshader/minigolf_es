@@ -130,7 +130,7 @@ class CourseSurface:
   sand_dark = (230, 220, 130)
   sand_light = (245, 240, 145)
 
-  def __init__(self, rect, friction=120, light_color=sand_light, dark_color=sand_dark):
+  def __init__(self, rect, friction=260, light_color=sand_light, dark_color=sand_dark):
     self.rect = rect
     self.friction = friction
     self.light_color = light_color
