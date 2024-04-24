@@ -103,7 +103,6 @@ def state_loss(state, frame_cost=0, bounce_cost=0):
   return max(stroke_loss + strokes - 1, 0) + frame_cost * frames + bounce_cost * bounces
 
 
-
 def is_done(state):
   ball = state["ball"]
   hole = state["hole"]
@@ -158,7 +157,6 @@ def run(state, dt):
     #   exit(1)
 
 
-
 def act(state, hit_direction, max_speed=200):
   ball = state["ball"]
   ball.vel = hit_direction * max_speed
@@ -186,3 +184,16 @@ def save_state(state, directory='courses'):
 
   with open(f'{directory + "/state_"}{number}.pickle', 'wb') as f:
     pickle.dump(state, f)
+
+
+def load_states(directory='courses'):
+  """Load all states in the directory."""
+  states = []
+  if not os.path.exists(directory):
+    return states
+  files = os.listdir(directory)
+  for file in files:
+    if file.startswith('state_') and file.endswith('.pickle'):
+      with open(f'{directory}/{file}', 'rb') as f:
+        states.append(pickle.load(f))
+  return states

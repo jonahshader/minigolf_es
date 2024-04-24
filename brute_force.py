@@ -1,5 +1,5 @@
 import pygame
-from env import make_state, is_done, step, act, run, state_loss
+from env import make_state, is_done, step, act, run, state_loss, load_states
 from copy import deepcopy
 import numpy as np
 import multiprocessing as mp
@@ -49,9 +49,23 @@ def ga_simple(state, action: np.ndarray, n: int, loss: float, noise: float, eval
     return actions[best_idx], best_loss
   else:
     return action, loss
+  
 
-def state_builder():
-  return make_state(max_strokes=4, num_surfaces=3, max_surface_size=128)
+handmade_states = load_states()
+
+use_handmade_states = True
+
+if use_handmade_states:
+  current_state = 0
+  def state_builder():
+    global current_state
+    state = deepcopy(handmade_states[current_state])
+    state['ball_start'] = deepcopy(state['ball'].pos)
+    current_state = (current_state + 1) % len(handmade_states)
+    return state
+else:
+  def state_builder():
+    return make_state(max_strokes=4, num_surfaces=3, max_surface_size=128)
 
 if __name__ == '__main__':
   p = 4
