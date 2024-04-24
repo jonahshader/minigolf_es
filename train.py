@@ -16,6 +16,7 @@ from env_render import render_state_tensor, render_state_tensor_for_policy
 from compute_transform import create_transform
 
 print_timings = False
+print_eval_timings = False
 
 
 # closure for running a state
@@ -60,7 +61,7 @@ def eval_batched(states, model, device, pool, transform=None, use_policy_render=
     running = any(not is_done(state) for state in states)
 
     end_time = time.time()
-    if print_timings:
+    if print_eval_timings:
       print(f"Rendering time: {policy_start - render_start:.4f} seconds")
       print(f"Policy time: {act_start - policy_start:.4f} seconds")
       print(f"Act time: {run_start - act_start:.4f} seconds")
@@ -109,7 +110,16 @@ def train_step(states, model, optimizer, batch_size, pool: mp.Pool, device='cpu'
       print("Rendering")
     render_start = time.time()
     render_fun = render_state_tensor_for_policy if use_policy_render else render_state_tensor
-    surface_batches = [render_fun(state_batch, transform=transform).to(device) for state_batch in states_batches]
+    # def render_fun_closure(state_batch):
+    #   if use_policy_render:
+    #     return render_state_tensor_for_policy(state_batch, transform=transform)
+    #   else:
+    #     return render_state_tensor(state_batch, transform=transform)
+    
+    surface_batches = [render_fun(state_batch) for state_batch in states_batches]
+    # run in parallel
+    # surface_batches = pool.map(render_fun_closure, states_batches)
+    surface_batches = [surface_batch.to(device) for surface_batch in surface_batches]
 
     # if using an autoencoder, encode the surfaces
     if encoder_model is not None:
@@ -243,6 +253,7 @@ def train(config, state_builder):
   # create the initial batch of states
   # each mutated model will eval on all these
   states = [state_builder() for _ in range(states_per_batch)]
+  eval_states = [state_builder() for _ in range(16)]
 
   # override default transform
   if not use_autoencoder:
@@ -307,12 +318,17 @@ def train(config, state_builder):
         deepcopy(states), model, device, pool, transform=transform, use_policy_render=use_policy_render, encoder_model=autoenc_model)
     print(f"Original model loss: {sum(loss) / len(loss)}")
 
+    eval_loss = eval_batched(
+        deepcopy(eval_states), model, device, pool, transform=transform, use_policy_render=use_policy_render, encoder_model=autoenc_model)
+    print(f"Eval model loss: {sum(eval_loss) / len(eval_loss)}")
+
     if use_wandb:
       log_info = {
           "avg_loss": avg_loss,
           "min_loss": losses.min(),
           "max_loss": losses.max(),
           "center_loss": sum(loss) / len(loss),
+          "eval_loss": sum(eval_loss) / len(eval_loss),
       }
       wandb.log(log_info)
 
@@ -355,11 +371,16 @@ def default_config():
 
 if __name__ == '__main__':
   config = default_config()
+  config['use_wandb'] = True
   config['model_type'] = ResModel1
-  config['iters'] = 3000
+  config['iters'] = 600
+  config['batch_size'] = 256
+  config['lr'] = 1e-3
+  config['standard_dev'] = 0.005
+  config['states_per_batch'] = 32
   config['use_autoencoder'] = True
   config['autoencoder_name'] = 'resnet_1'
-  config['run_name'] = 'ResModel1_encoded_1'
+  config['run_name'] = 'ResModel1_encoded_2'
   def state_builder():
     s = make_state(max_strokes=1, wall_chance=0.3, wall_overlap=0.4)
     return s
