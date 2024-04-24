@@ -7,6 +7,7 @@ import torch
 # transforms
 from torchvision.transforms import Normalize
 
+
 def create_transform():
   """Create a virtual batch normalization layer."""
 
@@ -20,12 +21,11 @@ def create_transform():
   surface_rgb = [
       np.ascontiguousarray(pygame.surfarray.pixels3d(surface))
       for surface in surfaces
-  ] # list of numpy arrays of shape (size, size, 3)
+  ]  # list of numpy arrays of shape (size, size, 3)
 
   # Convert the RGB arrays to a PyTorch tensor
   # first convert the list of numpy arrays to a numpy array of shape (64, size, size, 3)
   surface_tensor = torch.from_numpy(np.stack(surface_rgb)).float()
-  
 
   # compute mean and std per channel
   mean = surface_tensor.mean(dim=(0, 1, 2))
@@ -35,4 +35,3 @@ def create_transform():
   transform = Normalize(mean, std)
 
   return transform
-
